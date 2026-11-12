@@ -79,4 +79,7 @@ def clean_reply(text: str, max_sentences: int) -> str:
     text = re.sub(r"\s+", " ", text).strip()
     text = re.sub(r"\s+([.,!?;:])", r"\1", text)
     kept = sentences(text)[:max_sentences]
-    return " ".join(kept) if kept else text
+    result = " ".join(kept) if kept else text
+    if result.count('"') % 2:  # the length cap can cut a quotation in half
+        result = result.replace('"', "")
+    return result

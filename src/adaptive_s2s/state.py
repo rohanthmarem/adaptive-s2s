@@ -85,7 +85,8 @@ def update_state(
 
     # Register: a short turn carries little evidence either way, so it moves the state less.
     # "No slang in a three-word reply" is not evidence that the speaker turned formal.
-    beta = cfg.register_beta * min(1.0, register.n_tokens / 8.0)
+    # The first turn has nothing to average with, so it sets the level directly.
+    beta = (1.0 if prev.turn == 0 else cfg.register_beta) * min(1.0, register.n_tokens / 8.0)
     s.casual = (1.0 - beta) * s.casual + beta * register.casual_evidence
     s.formal = (1.0 - beta) * s.formal + beta * register.formal_evidence
     s.register = _register_label(s.register, s.casual, s.formal, cfg)
