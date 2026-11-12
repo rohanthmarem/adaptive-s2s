@@ -203,7 +203,11 @@ Scripts are split into dev and held-out in `scripts.yaml` now, before any tuning
 ### What the harness does today, and what it cannot claim
 
 It builds the stimuli, runs the arms, computes every automatic metric and exports a blind rating sheet. Runs
-in this repo so far use synthetic voices. They show that the apparatus works. They are not results.
+in this repo so far use synthetic voices and acted clips. They show that the apparatus works. They are not
+results. The smoke-run numbers are in the README.
+
+The smoke run already shows the predicted shape: the adaptive arm's reply speed follows the speaker's pace
+(slope 0.079, interval 0.061 to 0.103) and the shuffled control does not (0.008, interval -0.021 to 0.036).
 
 ## 6. Weekend schedule
 
