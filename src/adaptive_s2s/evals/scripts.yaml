@@ -3,23 +3,25 @@
 # split: "dev" scripts may be used to tune thresholds. "heldout" scripts are reserved: do not look at
 #        their results until the policy numbers are frozen.
 # topic: words an on-topic reply would mention. This is a crude automatic check that adapting the
-#        style did not change the subject. Human ratings replace it for real results.
+#        style did not change the subject. Only requests have it: a good reply to a plain statement
+#        ("That sounds important. What did you find out?") often repeats none of its words.
+#        Human ratings replace it for real results.
 
 # Neutral wording, at least nine words each so pace can be measured. The words give no hint of the
 # speaker's mood, so any change in the reply must come from the delivery.
 neutral:
-  - {id: n01, split: dev, text: "I got my test results back today, and I wanted to talk about them.", topic: [result, test]}
-  - {id: n02, split: dev, text: "My manager asked to see me first thing tomorrow morning.", topic: [manager, meeting, tomorrow, boss]}
-  - {id: n03, split: dev, text: "I just finished reading the email you sent me this afternoon.", topic: [email, message]}
-  - {id: n04, split: dev, text: "The package I ordered last week finally arrived at my door.", topic: [package, order, arrive, deliver]}
-  - {id: n05, split: dev, text: "My sister called me last night to tell me she is moving.", topic: [sister, moving, move]}
-  - {id: n06, split: dev, text: "I am going back to my hometown for the holidays this year.", topic: [hometown, holiday, home, trip]}
-  - {id: n07, split: dev, text: "They announced the results of the interview I did on Monday.", topic: [interview, result]}
-  - {id: n08, split: dev, text: "It looks like I will be working from home for the rest of the month.", topic: [work, home, remote]}
-  - {id: n09, split: heldout, text: "The doctor's office left me a voicemail asking me to call back.", topic: [doctor, call, voicemail]}
-  - {id: n10, split: heldout, text: "I spent the whole weekend cleaning out my old apartment.", topic: [apartment, weekend, clean]}
-  - {id: n11, split: heldout, text: "My landlord told me the rent is changing starting next month.", topic: [rent, landlord]}
-  - {id: n12, split: heldout, text: "I ran into an old friend at the grocery store this morning.", topic: [friend, store]}
+  - {id: n01, split: dev, text: "I got my test results back today, and I wanted to talk about them."}
+  - {id: n02, split: dev, text: "My manager asked to see me first thing tomorrow morning."}
+  - {id: n03, split: dev, text: "I just finished reading the email you sent me this afternoon."}
+  - {id: n04, split: dev, text: "The package I ordered last week finally arrived at my door."}
+  - {id: n05, split: dev, text: "My sister called me last night to tell me she is moving."}
+  - {id: n06, split: dev, text: "I am going back to my hometown for the holidays this year."}
+  - {id: n07, split: dev, text: "They announced the results of the interview I did on Monday."}
+  - {id: n08, split: dev, text: "It looks like I will be working from home for the rest of the month."}
+  - {id: n09, split: heldout, text: "The doctor's office left me a voicemail asking me to call back."}
+  - {id: n10, split: heldout, text: "I spent the whole weekend cleaning out my old apartment."}
+  - {id: n11, split: heldout, text: "My landlord told me the rent is changing starting next month."}
+  - {id: n12, split: heldout, text: "I ran into an old friend at the grocery store this morning."}
 
 # The same request in three registers. Delivery (voice and pace) is held fixed when these are
 # rendered, so any change in the reply must come from the wording.
@@ -67,8 +69,9 @@ distress:
   - {id: d02, split: dev, text: "My grandmother passed away last night and I can't sleep.", topic: [grandmother, sleep, loss]}
 
 # A scripted four-turn conversation for the demo. `rate` is the macOS `say` rate in words per minute.
+# `say` cannot go slower than about 150, so slow turns are also stretched (pitch kept) by `stretch`.
 demo:
   - {text: "Hey, so I kinda gotta bail on our thing tomorrow, ngl my week is cooked. Can we move it to Friday?", rate: 215, voice: Samantha}
   - {text: "Yeah Friday afternoon works. What time is chill for you?", rate: 215, voice: Samantha}
-  - {text: "Honestly I just got laid off this morning and I don't know what to do.", rate: 150, voice: Samantha}
-  - {text: "Thank you. Could you please help me draft a brief message to my former manager regarding a reference?", rate: 150, voice: Samantha}
+  - {text: "Honestly I just got laid off this morning and I don't know what to do.", rate: 150, stretch: 1.2, voice: Samantha}
+  - {text: "Thank you. Could you please help me draft a brief message to my former manager regarding a reference?", rate: 150, stretch: 1.2, voice: Samantha}

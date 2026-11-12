@@ -79,3 +79,9 @@ def test_policy():
 
 def test_clean():
     assert clean_reply("**Hello!** (smiles) Next sentence. Third.", 2) == "Hello! Next sentence."
+
+
+def test_possessive_is_not_a_contraction():
+    from adaptive_s2s import register
+    assert register.analyze("The doctor's office left a message.").contractions_per_100 == 0
+    assert register.analyze("It's fine, I don't mind, and that's all we've got.").contractions_per_100 > 0

@@ -43,8 +43,8 @@ All of it runs locally on the M5 MacBook Pro (32 GB). Timings are measured on th
 | Emotion (optional) | emotion2vec+ base through FunASR | Only practical open model. Scores are not calibrated (section 8). | 0.2 s per clip |
 | Register | Small rule set on the transcript (`register.py`) | Inspectable. Every decision can be traced to a word. | Instant |
 | State | `StyleState` (`state.py`), a pure update function | Loggable and replayable turn by turn | Instant |
-| Reply | Qwen2.5-7B-Instruct 4-bit through MLX | Apache-2.0, 4.3 GB, follows a style brief. Any OpenAI-compatible server also works. | See README |
-| Speech | Kokoro-82M (ONNX), speed control | Natural enough for human ratings, Apache-2.0, 330 MB | 0.18x real time |
+| Reply | Qwen2.5-7B-Instruct 4-bit through MLX | Apache-2.0, 4.3 GB, follows a style brief. Any OpenAI-compatible server also works. | About 1 to 2.5 s |
+| Speech | Kokoro-82M (ONNX), calibrated speed control | Natural enough for human ratings, Apache-2.0, 355 MB | 0.18x real time |
 
 ### The state (the "listener profile")
 
@@ -118,7 +118,7 @@ static baseline, repeated seeds for a noise floor, and nuisance controls. Honest
 
 | Topic | Fable | Astra | Chosen | Why |
 |---|---|---|---|---|
-| Speech synthesis | Kokoro-82M | eSpeak NG, then Piper | **Kokoro**, with Astra's rule to measure the realised rate | Human ratings need a natural voice. Astra's rule already paid off: a ±15% speed request produced a -10% / +7% change in measured speech rate. |
+| Speech synthesis | Kokoro-82M | eSpeak NG, then Piper | **Kokoro**, with Astra's rule to measure the realised rate | Human ratings need a natural voice. Astra's rule already paid off: Kokoro delivers about half of a small speed change (asking for 0.90x gives 0.95x). The adapter now corrects for this with a measured table. |
 | Emotion model | In v1, gated | Off by default, try last | **In, optional, gated** | It is one of the three requested behaviours. On four CREMA-D clips it read acted sadness as "neutral, 1.00", so the gate and the caveats stay. |
 | Switching support on | (Prelim: after two consistent turns) | At once, release slowly | **Astra's** | Waiting a turn to respond to "I just got laid off" is the wrong failure. |
 | Arms | No strong view | 2x2 + shuffled + oracle | **Astra's** | It isolates each half of the system. Seven arms with weak controls prove less. |
@@ -212,7 +212,7 @@ The code skeleton exists. The weekend goes to recordings, calibration and the fi
 | When | Do | Done when |
 |---|---|---|
 | **Friday evening** | Run `s2s demo` and `s2s talk`. Record the scripts yourself: 12 neutral scripts in three deliveries (plain, subdued, energised), a fast and slow subset, and the register triples. Send `RECORDING_GUIDE.md` to three friends. Write down what you expect to see. | About 30 minutes of your own audio is in `data/recordings/` |
-| **Saturday morning** | Calibrate the neutral rate and the speed-to-realised-rate mapping on dev recordings. Run the nuisance set. Fix what breaks. | Pace slope is above zero on dev and flat for `static` and `shuffled` |
+| **Saturday morning** | Calibrate the neutral rate on dev recordings (the Kokoro speed table is already measured). Run the nuisance set. Fix what breaks. | Pace slope is above zero on dev and flat for `static` and `shuffled` |
 | **Saturday afternoon** | Run the 2x2 plus shuffled on dev, both tracks. Read the failures. Decide whether the emotion gate stays. | Thresholds chosen on dev only |
 | **Sunday morning** | Freeze the config (commit hash). Run held-out. Export the rating sheet and get three raters on about 40 trials each. | Held-out report and scored ratings exist |
 | **Sunday afternoon** | Write post 1 with the failures included. Record a 60-second demo. | Post drafted |

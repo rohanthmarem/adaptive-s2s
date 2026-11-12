@@ -55,7 +55,13 @@ CRISIS = (
     "better off without me", "no reason to live",
 )
 
-_CONTRACTION_RE = re.compile(r"^[a-z]+'(?:s|re|ve|ll|d|m|t)$|^[a-z]+n't$")
+# "'s" counts only after words where it is a contraction ("it's", "that's"). After a noun it is
+# usually a possessive ("the doctor's office"), which says nothing about register.
+_CONTRACTION_RE = re.compile(
+    r"^[a-z]+'(?:re|ve|ll|d|m)$"
+    r"|^[a-z]+n't$"
+    r"|^(?:it|that|what|there|here|let|he|she|who|where|how|when|why)'s$"
+)
 
 
 def _hits(padded: str, terms: tuple[str, ...]) -> list[str]:
