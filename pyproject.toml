@@ -1,0 +1,36 @@
+[project]
+name = "adaptive-s2s"
+version = "0.1.0"
+description = "Turn-adaptive speech-to-speech: a cascade that adapts register and pace to the speaker, with an ablation harness"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "numpy>=1.26",
+  "soundfile",
+  "soxr",
+  "praat-parselmouth",
+  "faster-whisper",
+  "kokoro-onnx",
+  "pyyaml",
+  "huggingface_hub",
+]
+
+[project.optional-dependencies]
+mlx = ["mlx-lm; platform_system == 'Darwin' and platform_machine == 'arm64'"]
+mic = ["sounddevice"]
+affect = ["funasr", "torch", "torchaudio"]
+dev = ["pytest"]
+
+[project.scripts]
+s2s = "adaptive_s2s.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/adaptive_s2s"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: needs downloaded models (deselect with -m 'not slow')"]
