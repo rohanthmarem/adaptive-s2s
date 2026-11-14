@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plan · Your own full-duplex model</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #05070b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Georgia, 'Times New Roman', serif;
+    overflow: hidden;
+  }
+  .planim-root {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .planim-stage {
+    position: relative;
+    width: min(100vw, calc(100vh * 16 / 9));
+    aspect-ratio: 16 / 9;
+    background: #0d1017;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 0 80px rgba(0, 0, 0, 0.8);
+  }
+  .planim-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .planim-header {
+    position: absolute;
+    top: 2.2%;
+    left: 2.6%;
+    font-size: clamp(10px, 1.4vmin, 16px);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #566073;
+    pointer-events: none;
+    user-select: none;
+  }
+  .planim-caption {
+    position: absolute;
+    left: 50%;
+    bottom: 8.5%;
+    transform: translateX(-50%);
+    width: 78%;
+    text-align: center;
+    font-size: clamp(13px, 2.35vmin, 26px);
+    line-height: 1.45;
+    color: #c9cfd8;
+    pointer-events: none;
+    user-select: none;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.9);
+  }
+  .planim-caption span { opacity: 0; animation: planim-word 0.45s ease forwards; }
+  @keyframes planim-word { to { opacity: 1; } }
+  .planim-bar {
+    position: absolute;
+    left: 50%;
+    bottom: 2.2%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0.35;
+    transition: opacity 0.25s ease;
+  }
+  .planim-stage:hover .planim-bar { opacity: 1; }
+  .planim-bar button {
+    background: none;
+    border: none;
+    color: #8a92a3;
+    font-size: clamp(12px, 1.9vmin, 20px);
+    cursor: pointer;
+    padding: 2px 6px;
+    font-family: inherit;
+  }
+  .planim-bar button:hover { color: #eceff4; }
+  .planim-dots { display: flex; gap: 7px; align-items: center; }
+  .planim-dots span {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #2b3242;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .planim-dots span.done { background: #4a5468; }
+  .planim-dots span.on { background: #ffd966; transform: scale(1.3); }
+  .planim-counter {
+    color: #566073;
+    font-size: clamp(10px, 1.4vmin, 14px);
+    min-width: 4ch;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+<div id="planim"></div>
+<script>
+/*
+ * Planim — a tiny 3Blue1Brown-style animation engine for plans.
+ *
+ * Renders a scene script (window.PLANIM_DATA) as an animated explainer:
+ * dark board, Manim palette, write-on strokes, staggered text, and
+ * position-tweened diagrams between scenes.
+ *
+ * Coordinate system (like Manim): x in [-8, 8], y in [-4.5, 4.5], y points up.
+ */
+(function () {
+  'use strict';
+
+  // ---------------------------------------------------------------- constants
+
+  var COLORS = {
+    white: '#ECECEC',
+    blue: '#58C4DD',
+    teal: '#5CD0B3',
+    green: '#83C167',
+    yellow: '#FFD966',
+    gold: '#F0AC5F',
+    red: '#FC6255',
+    purple: '#9A72AC',
+    pink: '#D66FA8',
+    grey: '#8A8F98',
+  };
+  var SERIF = "'Latin Modern Roman', 'CMU Serif', Georgia, 'Times New Roman', serif";
+  var MONO = "'SF Mono', 'Menlo', 'Consolas', monospace";
+  var NS = 'http://www.w3.org/2000/svg';
+  var W = 1600;
+  var H = 900;
+  var SC = 100; // pixels per world unit
+
+  function wx(x) { return W / 2 + SC * x; }
+  function wy(y) { return H / 2 - SC * y; }
+  function color(name, fallback) {
+    if (!name) return COLORS[fallback || 'white'];
+    return COLORS[name] || name;
+  }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function smooth(t) { // Manim's smooth(): quintic smoothstep
+    t = clamp(t, 0, 1);
+    return t * t * t * (t * (6 * t - 15) + 10);
+  }
+  function linear(t) { return clamp(t, 0, 1); }
+
+  function svg(tag, attrs, parent) {
+    var n = document.createElementNS(NS, tag);
+    if (attrs) for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+
+  function roundedRectPath(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    return 'M' + (x + r) + ' ' + y +
+      ' H' + (x + w - r) + ' Q' + (x + w) + ' ' + y + ' ' + (x + w) + ' ' + (y + r) +
+      ' V' + (y + h - r) + ' Q' + (x + w) + ' ' + (y + h) + ' ' + (x + w - r) + ' ' + (y + h) +
+      ' H' + (x + r) + ' Q' + x + ' ' + (y + h) + ' ' + x + ' ' + (y + h - r) +
+      ' V' + (y + r) + ' Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + ' Z';
+  }
+
+  // ---------------------------------------------------------------- tweens
+
+  var tweens = [];
+  var rafRunning = false;
+
+  function addTween(o) {
+    // o: {delay, dur, ease, update(p), done(), tag}
+    o.start = performance.now() + (o.delay || 0) * 1000;
+    o.dur = (o.dur == null ? 0.8 : o.dur) * 1000;
+    o.ease = o.ease || smooth;
+    tweens.push(o);
+    if (!rafRunning) { rafRunning = true; requestAnimationFrame(tick); }
+    return o;
+  }
+
+  function tick(now) {
+    for (var i = tweens.length - 1; i >= 0; i--) {
+      var o = tweens[i];
+      if (now < o.start) continue;
+      var p = o.dur <= 0 ? 1 : clamp((now - o.start) / o.dur, 0, 1);
+      o.update(o.ease(p), p);
+      if (p >= 1) {
+        tweens.splice(i, 1);
+        if (o.done) o.done();
+      }
+    }
+    if (tweens.length) requestAnimationFrame(tick);
+    else rafRunning = false;
+  }
+
+  function finishTweens(tag) {
+    for (var i = tweens.length - 1; i >= 0; i--) {
+      var o = tweens[i];
+      if (tag == null || o.tag === tag) {
+        tweens.splice(i, 1);
+        if (o.buildOnly) continue; // deferred builds are dropped, not forced
+        o.update(1, 1);
+        if (o.done) o.done();
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------- text
+
+  // Builds one or more <text> lines inside g, one <tspan> per word,
+  // each starting invisible. Returns {words, lineEls, lineHeight}.
+  function buildText(g, spec, opts) {
+    opts = opts || {};
+    var size = (spec.size || 1) * (opts.base || 42);
+    var fill = color(spec.color, opts.color || 'white');
+    var anchor = spec.align === 'left' ? 'start' : spec.align === 'right' ? 'end' : (opts.anchor || 'middle');
+    var lines = String(spec.text == null ? spec.label : spec.text).split('\n');
+    var lh = size * 1.4;
+    var words = [];
+    var lineEls = [];
+    lines.forEach(function (line, i) {
+      var t = svg('text', {
+        x: 0,
+        y: i * lh - ((lines.length - 1) * lh) / 2,
+        fill: fill,
+        'font-size': size,
+        'font-family': opts.mono ? MONO : SERIF,
+        'text-anchor': anchor,
+        'dominant-baseline': 'central',
+      }, g);
+      if (opts.italic || spec.italic) t.setAttribute('font-style', 'italic');
+      if (opts.bold || spec.bold) t.setAttribute('font-weight', 'bold');
+      line.split(/(\s+)/).forEach(function (tok) {
+        if (!tok) return;
+        var ts = document.createElementNS(NS, 'tspan');
+        ts.textContent = tok.replace(/ /g, '\u00A0');
+        ts.setAttribute('fill-opacity', '0');
+        t.appendChild(ts);
+        if (tok.trim()) words.push(ts);
+      });
+      lineEls.push(t);
+    });
+    return { words: words, lineEls: lineEls, lineHeight: lh };
+  }
+
+  // Staggered word-by-word reveal, like Manim's AddTextWordByWord.
+  function animateWords(words, at, tag, per, dur) {
+    per = per == null ? 0.045 : per;
+    dur = dur == null ? 0.4 : dur;
+    var total = Math.max(0.001, (words.length - 1) * per + dur);
+    addTween({
+      delay: at, dur: total, ease: linear, tag: tag,
+      update: function (p) {
+        var time = p * total;
+        for (var i = 0; i < words.length; i++) {
+          var lp = clamp((time - i * per) / dur, 0, 1);
+          words[i].setAttribute('fill-opacity', String(smooth(lp)));
+        }
+      },
+    });
+  }
+
+  // Write-on stroke animation, like Manim's Create()/Write().
+  function drawStroke(path, at, dur, tag) {
+    var L;
+    try { L = path.getTotalLength(); } catch (e) { L = 1000; }
+    path.setAttribute('stroke-dasharray', String(L));
+    path.setAttribute('stroke-dashoffset', String(L));
+    addTween({
+      delay: at, dur: dur == null ? 0.7 : dur, tag: tag,
+      update: function (p) { path.setAttribute('stroke-dashoffset', String(L * (1 - p))); },
+      done: function () { path.removeAttribute('stroke-dasharray'); path.removeAttribute('stroke-dashoffset'); },
+    });
+  }
+
+  function fadeIn(node, at, dur, tag, to) {
+    node.setAttribute('opacity', '0');
+    addTween({
+      delay: at, dur: dur == null ? 0.4 : dur, tag: tag,
+      update: function (p) { node.setAttribute('opacity', String(p * (to == null ? 1 : to))); },
+    });
+  }
+
+  // ---------------------------------------------------------------- geometry
+
+  // Point on the boundary of a w×h rect centered at c, in direction of `toward`.
+  function rectAnchor(c, w, h, toward, gap) {
+    gap = gap || 10;
+    var dx = toward.x - c.x;
+    var dy = toward.y - c.y;
+    var len = Math.hypot(dx, dy) || 1;
+    dx /= len; dy /= len;
+    var tx = dx === 0 ? Infinity : (w / 2 + gap) / Math.abs(dx);
+    var ty = dy === 0 ? Infinity : (h / 2 + gap) / Math.abs(dy);
+    var t = Math.min(tx, ty);
+    return { x: c.x + dx * t, y: c.y + dy * t };
+  }
+
+  // ---------------------------------------------------------------- player
+
+  function Player(root, data) {
+    this.data = data;
+    this.scenes = data.scenes || [];
+    this.index = -1;
+    this.autoplay = false;
+    this.sound = false;
+    this.autoTimer = null;
+    // id -> {spec, g, world:{x,y}, size:{w,h}, sig}
+    this.live = {};
+    this.buildShell(root);
+    this.show(0, 0);
+  }
+
+  Player.prototype.buildShell = function (root) {
+    var self = this;
+    root.innerHTML = '';
+    root.classList.add('planim-root');
+
+    this.stageWrap = document.createElement('div');
+    this.stageWrap.className = 'planim-stage';
+    root.appendChild(this.stageWrap);
+
+    this.svg = svg('svg', { viewBox: '0 0 ' + W + ' ' + H, preserveAspectRatio: 'xMidYMid meet' }, null);
+    this.stageWrap.appendChild(this.svg);
+    this.layer = svg('g', {}, this.svg);
+
+    var header = document.createElement('div');
+    header.className = 'planim-header';
+    header.textContent = this.data.title || 'Plan';
+    this.stageWrap.appendChild(header);
+
+    this.caption = document.createElement('div');
+    this.caption.className = 'planim-caption';
+    this.stageWrap.appendChild(this.caption);
+
+    var bar = document.createElement('div');
+    bar.className = 'planim-bar';
+    this.stageWrap.appendChild(bar);
+
+    function btn(label, title, onclick) {
+      var b = document.createElement('button');
+      b.innerHTML = label;
+      b.title = title;
+      b.addEventListener('click', function (e) { e.stopPropagation(); onclick(); });
+      bar.appendChild(b);
+      return b;
+    }
+
+    btn('&#8592;', 'Previous scene (←)', function () { self.prev(); });
+    this.dots = document.createElement('div');
+    this.dots.className = 'planim-dots';
+    bar.appendChild(this.dots);
+    this.scenes.forEach(function (_, i) {
+      var d = document.createElement('span');
+      d.addEventListener('click', function (e) { e.stopPropagation(); self.show(i, i > self.index ? 1 : -1); });
+      self.dots.appendChild(d);
+    });
+    btn('&#8594;', 'Next scene (→ or space)', function () { self.next(); });
+    this.playBtn = btn('&#9654;', 'Autoplay (a)', function () { self.toggleAutoplay(); });
+    this.soundBtn = btn('&#128263;', 'Narration audio (s)', function () { self.toggleSound(); });
+    this.counter = document.createElement('span');
+    this.counter.className = 'planim-counter';
+    bar.appendChild(this.counter);
+
+    this.stageWrap.addEventListener('click', function () { self.next(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); self.next(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); self.prev(); }
+      else if (e.key === 'Home') self.show(0, -1);
+      else if (e.key === 'End') self.show(self.scenes.length - 1, 1);
+      else if (e.key === 'a') self.toggleAutoplay();
+      else if (e.key === 's') self.toggleSound();
+    });
+  };
+
+  Player.prototype.next = function () {
+    if (this.index < this.scenes.length - 1) this.show(this.index + 1, 1);
+    else if (this.autoplay) this.toggleAutoplay();
+  };
+  Player.prototype.prev = function () {
+    if (this.index > 0) this.show(this.index - 1, -1);
+  };
+
+  Player.prototype.toggleAutoplay = function () {
+    this.autoplay = !this.autoplay;
+    this.playBtn.innerHTML = this.autoplay ? '&#10074;&#10074;' : '&#9654;';
+    if (this.autoplay) {
+      if (this.index === this.scenes.length - 1) this.show(0, 1);
+      else this.scheduleAdvance();
+    } else if (this.autoTimer) {
+      clearTimeout(this.autoTimer);
+      this.autoTimer = null;
+    }
+  };
+
+  Player.prototype.toggleSound = function () {
+    this.sound = !this.sound;
+    this.soundBtn.innerHTML = this.sound ? '&#128266;' : '&#128263;';
+    if (!this.sound && window.speechSynthesis) window.speechSynthesis.cancel();
+    else this.speak();
+  };
+
+  Player.prototype.speak = function () {
+    if (!this.sound || !window.speechSynthesis) return;
+    var scene = this.scenes[this.index];
+    if (!scene || !scene.narration) return;
+    window.speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(scene.narration);
+    u.rate = 1.02;
+    window.speechSynthesis.speak(u);
+  };
+
+  Player.prototype.sceneDuration = function (scene) {
+    var maxAt = 0;
+    (scene.elements || []).forEach(function (e) { maxAt = Math.max(maxAt, e.at || 0); });
+    var words = scene.narration ? scene.narration.split(/\s+/).length : 0;
+    return Math.max(3.5, maxAt + 1.5, words * 0.34 + 1.2);
+  };
+
+  Player.prototype.scheduleAdvance = function () {
+    var self = this;
+    if (this.autoTimer) clearTimeout(this.autoTimer);
+    var scene = this.scenes[this.index];
+    this.autoTimer = setTimeout(function () {
+      if (self.autoplay) self.next();
+    }, this.sceneDuration(scene) * 1000);
+  };
+
+  // Signature used to decide move-tween vs fade-replace across scenes.
+  function sigOf(spec) {
+    var copy = {};
+    for (var k in spec) if (k !== 'pos' && k !== 'at' && k !== 'id') copy[k] = spec[k];
+    return JSON.stringify(copy);
+  }
+
+  Player.prototype.show = function (i, dir) {
+    var self = this;
+    if (i < 0 || i >= this.scenes.length || i === this.index) return;
+    finishTweens(null);
+    if (this.sound && window.speechSynthesis) window.speechSynthesis.cancel();
+    this.index = i;
+    var scene = this.scenes[i];
+    var tag = 's' + i;
+
+    // Partition new specs: which live elements carry over?
+    var newSpecs = (scene.elements || []).map(function (spec, j) {
+      var id = spec.id || '__s' + i + 'e' + j;
+      return { id: id, spec: spec };
+    });
+    var incoming = {};
+    newSpecs.forEach(function (e) { incoming[e.id] = e; });
+
+    var anyMove = false;
+    var keepIds = {};
+    for (var id in this.live) {
+      var old = this.live[id];
+      var nw = incoming[id];
+      // Arrows and highlights bake absolute coordinates into their paths,
+      // so they always redraw instead of carrying over.
+      var movable = old.spec.type !== 'arrow' && old.spec.type !== 'highlight';
+      if (nw && movable && id.indexOf('__') !== 0 && sigOf(nw.spec) === old.sig) {
+        keepIds[id] = true;
+        var np = nw.spec.pos || [0, 0];
+        if (np[0] !== old.world.x || np[1] !== old.world.y) {
+          anyMove = true;
+          (function (entry, from, to) {
+            addTween({
+              delay: 0.1, dur: 0.9, tag: tag,
+              update: function (p) {
+                var x = from.x + (to.x - from.x) * p;
+                var y = from.y + (to.y - from.y) * p;
+                entry.g.setAttribute('transform', 'translate(' + wx(x) + ',' + wy(y) + ')');
+                entry.world = { x: x, y: y };
+              },
+            });
+          })(old, { x: old.world.x, y: old.world.y }, { x: np[0], y: np[1] });
+        }
+        old.spec = nw.spec;
+      }
+    }
+
+    // Fade out everything that doesn't carry over.
+    for (var oid in this.live) {
+      if (keepIds[oid]) continue;
+      (function (entry) {
+        addTween({
+          delay: 0, dur: 0.35, tag: tag,
+          update: function (p) { entry.g.setAttribute('opacity', String(1 - p)); },
+          done: function () { if (entry.g.parentNode) entry.g.parentNode.removeChild(entry.g); },
+        });
+      })(this.live[oid]);
+      delete this.live[oid];
+    }
+
+    // Build incoming elements. Arrows and highlights resolve node positions,
+    // so their construction waits until any move tweens have finished —
+    // otherwise they would anchor to stale coordinates.
+    var base = 0.25 + (anyMove ? 0.75 : 0);
+    var deferred = [];
+    newSpecs.forEach(function (e) {
+      if (keepIds[e.id]) return;
+      if (e.spec.type === 'arrow' || e.spec.type === 'highlight') deferred.push(e);
+      else self.buildElement(e.id, e.spec, base, tag);
+    });
+    var buildAt = anyMove ? 1.05 : 0;
+    deferred.forEach(function (e) {
+      addTween({
+        delay: buildAt, dur: 0, tag: tag, buildOnly: true,
+        update: function () {},
+        done: function () { self.buildElement(e.id, e.spec, 0.15, tag); },
+      });
+    });
+
+    this.renderCaption(scene.narration || '');
+    this.renderProgress();
+    this.speak();
+    if (this.autoplay) this.scheduleAdvance();
+  };
+
+  Player.prototype.renderCaption = function (text) {
+    this.caption.innerHTML = '';
+    var self = this;
+    text.split(/(\s+)/).forEach(function (tok, i) {
+      if (!tok) return;
+      var s = document.createElement('span');
+      s.textContent = tok;
+      s.style.animationDelay = (0.3 + i * 0.018) + 's';
+      self.caption.appendChild(s);
+    });
+  };
+
+  Player.prototype.renderProgress = function () {
+    var kids = this.dots.children;
+    for (var i = 0; i < kids.length; i++) {
+      kids[i].className = i === this.index ? 'on' : i < this.index ? 'done' : '';
+    }
+    this.counter.textContent = (this.index + 1) + ' / ' + this.scenes.length;
+  };
+
+  // ------------------------------------------------------------ element builders
+
+  Player.prototype.register = function (id, spec, g, world, size) {
+    this.live[id] = { spec: spec, g: g, world: world, size: size || { w: 0, h: 0 }, sig: sigOf(spec) };
+  };
+
+  Player.prototype.buildElement = function (id, spec, base, tag) {
+    var at = base + (spec.at || 0);
+    var pos = spec.pos || [0, 0];
+    var world = { x: pos[0], y: pos[1] };
+    var g = svg('g', { transform: 'translate(' + wx(world.x) + ',' + wy(world.y) + ')' }, this.layer);
+    var size = null;
+
+    switch (spec.type) {
+      case 'title': size = this.buildTitle(g, spec, at, tag); break;
+      case 'text': size = this.buildPlainText(g, spec, at, tag); break;
+      case 'node': size = this.buildNode(g, spec, at, tag); break;
+      case 'arrow': size = this.buildArrow(g, spec, at, tag, world); break;
+      case 'list': size = this.buildList(g, spec, at, tag); break;
+      case 'code': size = this.buildCode(g, spec, at, tag); break;
+      case 'plot': size = this.buildPlot(g, spec, at, tag); break;
+      case 'highlight': size = this.buildHighlight(g, spec, at, tag); break;
+      default: size = this.buildPlainText(g, spec, at, tag);
+    }
+    this.register(id, spec, g, world, size);
+  };
+
+  Player.prototype.buildTitle = function (g, spec, at, tag) {
+    var t = buildText(g, spec, { base: 68, bold: false });
+    animateWords(t.words, at, tag, 0.09, 0.55);
+    if (spec.underline !== false) {
+      var bb = g.getBBox();
+      var uw = Math.max(bb.width * 0.7, 220);
+      var y = bb.y + bb.height + 18;
+      var p = svg('path', {
+        d: 'M' + (-uw / 2) + ' ' + y + ' H' + (uw / 2),
+        stroke: color(spec.color, 'yellow'), 'stroke-width': 4, fill: 'none',
+        'stroke-linecap': 'round',
+      }, g);
+      drawStroke(p, at + 0.5, 0.6, tag);
+    }
+    var bb2 = g.getBBox();
+    return { w: bb2.width, h: bb2.height };
+  };
+
+  Player.prototype.buildPlainText = function (g, spec, at, tag) {
+    var t = buildText(g, spec, { base: 40 });
+    animateWords(t.words, at, tag);
+    var bb = g.getBBox();
+    return { w: bb.width, h: bb.height };
+  };
+
+  Player.prototype.buildNode = function (g, spec, at, tag) {
+    var c = color(spec.color, 'blue');
+    var label = buildText(g, { text: spec.label, size: spec.size || 0.85, color: spec.textColor || 'white' }, { base: 40 });
+    var bb = g.getBBox();
+    var padX = 30, padY = 20;
+    var w = Math.max(bb.width + padX * 2, 120);
+    var h = bb.height + padY * 2;
+    var box = svg('path', {
+      d: roundedRectPath(-w / 2, -h / 2, w, h, 14),
+      stroke: c, 'stroke-width': 4, fill: c, 'fill-opacity': 0,
+    }, null);
+    g.insertBefore(box, g.firstChild);
+    drawStroke(box, at, 0.65, tag);
+    addTween({
+      delay: at + 0.35, dur: 0.5, tag: tag,
+      update: function (p) { box.setAttribute('fill-opacity', String(0.10 * p)); },
+    });
+    animateWords(label.words, at + 0.3, tag, 0.03, 0.35);
+    return { w: w, h: h };
+  };
+
+  Player.prototype.resolveEndpoint = function (ref, toward) {
+    // ref: node id string, or [x, y] world coords.
+    if (Array.isArray(ref)) return { x: wx(ref[0]), y: wy(ref[1]) };
+    var n = this.live[ref];
+    if (!n) return { x: W / 2, y: H / 2 };
+    var c = { x: wx(n.world.x), y: wy(n.world.y) };
+    if (!toward) return c;
+    return rectAnchor(c, n.size.w, n.size.h, toward, 8);
+  };
+
+  Player.prototype.buildArrow = function (g, spec, at, tag, world) {
+    // Arrow group sits at scene origin; path uses absolute svg coords.
+    g.setAttribute('transform', 'translate(0,0)');
+    var c = color(spec.color, 'grey');
+    var fromC = this.resolveEndpoint(spec.from);
+    var toC = this.resolveEndpoint(spec.to);
+    var curve = spec.curve || 0;
+    var mid = { x: (fromC.x + toC.x) / 2, y: (fromC.y + toC.y) / 2 };
+    var dx = toC.x - fromC.x, dy = toC.y - fromC.y;
+    var len = Math.hypot(dx, dy) || 1;
+    var ctrl = { x: mid.x - (dy / len) * curve * len, y: mid.y + (dx / len) * curve * len };
+
+    var from = this.resolveEndpoint(spec.from, curve ? ctrl : toC);
+    var to = this.resolveEndpoint(spec.to, curve ? ctrl : fromC);
+
+    // Shorten the path so the arrowhead tip lands on the anchor.
+    var headLen = 20;
+    var tdx = to.x - (curve ? ctrl.x : from.x);
+    var tdy = to.y - (curve ? ctrl.y : from.y);
+    var tlen = Math.hypot(tdx, tdy) || 1;
+    var end = { x: to.x - (tdx / tlen) * headLen * 0.8, y: to.y - (tdy / tlen) * headLen * 0.8 };
+
+    var d = curve
+      ? 'M' + from.x + ' ' + from.y + ' Q' + ctrl.x + ' ' + ctrl.y + ' ' + end.x + ' ' + end.y
+      : 'M' + from.x + ' ' + from.y + ' L' + end.x + ' ' + end.y;
+    var path = svg('path', { d: d, stroke: c, 'stroke-width': 4.5, fill: 'none', 'stroke-linecap': 'round' }, g);
+    drawStroke(path, at, 0.6, tag);
+
+    var angle = Math.atan2(tdy, tdx) * 180 / Math.PI;
+    var head = svg('path', {
+      d: 'M0 0 L' + (-headLen) + ' ' + (headLen * 0.42) + ' L' + (-headLen * 0.72) + ' 0 L' + (-headLen) + ' ' + (-headLen * 0.42) + ' Z',
+      fill: c,
+      transform: 'translate(' + to.x + ',' + to.y + ') rotate(' + angle + ')',
+    }, g);
+    fadeIn(head, at + 0.42, 0.25, tag);
+
+    if (spec.label) {
+      var lg = svg('g', {}, g);
+      // offset perpendicular to the line, on whichever side points up
+      var pxv = -tdy / tlen, pyv = tdx / tlen;
+      if (pyv > 0) { pxv = -pxv; pyv = -pyv; }
+      var off = 28;
+      var lx = (curve ? (from.x + 2 * ctrl.x + end.x) / 4 : mid.x) + pxv * off;
+      var ly = (curve ? (from.y + 2 * ctrl.y + end.y) / 4 : mid.y) + pyv * off;
+      lg.setAttribute('transform', 'translate(' + lx + ',' + ly + ')');
+      var lt = buildText(lg, { text: spec.label, size: spec.size || 0.62, color: spec.labelColor || spec.color || 'grey', italic: true }, { base: 40 });
+      animateWords(lt.words, at + 0.35, tag, 0.03, 0.3);
+    }
+    return { w: 0, h: 0 };
+  };
+
+  Player.prototype.buildList = function (g, spec, at, tag) {
+    var size = (spec.size || 1) * 38;
+    var lh = size * 1.7;
+    var items = spec.items || [];
+    var n = items.length;
+    var self = this;
+    items.forEach(function (item, i) {
+      var y = i * lh - ((n - 1) * lh) / 2;
+      var ig = svg('g', { transform: 'translate(0,' + y + ')' }, g);
+      var bullet = svg('path', {
+        d: 'M0 ' + (-size * 0.28) + ' L' + (size * 0.42) + ' 0 L0 ' + (size * 0.28),
+        stroke: color(spec.bulletColor, 'yellow'), 'stroke-width': 3.5, fill: 'none',
+        'stroke-linejoin': 'round', 'stroke-linecap': 'round',
+      }, ig);
+      var tg = svg('g', { transform: 'translate(' + (size * 0.85) + ',0)' }, ig);
+      var t = buildText(tg, { text: item, size: spec.size || 1, color: spec.color, align: 'left' }, { base: 38 });
+      var itemAt = at + i * (spec.stagger == null ? 0.55 : spec.stagger);
+      drawStroke(bullet, itemAt, 0.3, tag);
+      animateWords(t.words, itemAt + 0.1, tag, 0.03, 0.35);
+    });
+    var bb = g.getBBox();
+    return { w: bb.width, h: bb.height };
+  };
+
+  Player.prototype.buildCode = function (g, spec, at, tag) {
+    var size = (spec.size || 1) * 27;
+    var lh = size * 1.62;
+    var lines = String(spec.text).split('\n');
+    var padX = 34, padY = 26;
+
+    var body = svg('g', {}, g);
+    var lineEls = [];
+    lines.forEach(function (line, i) {
+      var t = svg('text', {
+        x: 0, y: i * lh, fill: COLORS.white, 'font-size': size,
+        'font-family': MONO, 'text-anchor': 'start', 'dominant-baseline': 'central',
+        'xml:space': 'preserve',
+      }, body);
+      t.textContent = line.replace(/ /g, '\u00A0') || '\u00A0';
+      t.setAttribute('fill-opacity', '0');
+      lineEls.push(t);
+    });
+    var bb = body.getBBox();
+    var w = bb.width + padX * 2;
+    var h = lines.length * lh + padY * 2 - (lh - size);
+    body.setAttribute('transform', 'translate(' + (-w / 2 + padX) + ',' + (-h / 2 + padY + size * 0.4) + ')');
+
+    var panel = svg('path', {
+      d: roundedRectPath(-w / 2, -h / 2, w, h, 16),
+      fill: '#151a24', stroke: '#3a4254', 'stroke-width': 2.5,
+    }, null);
+    g.insertBefore(panel, body);
+    fadeIn(panel, at, 0.4, tag);
+
+    if (spec.title) {
+      var tg = svg('g', { transform: 'translate(' + (-w / 2) + ',' + (-h / 2 - 26) + ')' }, g);
+      var tt = buildText(tg, { text: spec.title, size: 0.6, color: 'grey', align: 'left' }, { base: 40, mono: true });
+      animateWords(tt.words, at, tag, 0.02, 0.3);
+    }
+
+    lineEls.forEach(function (t, i) {
+      addTween({
+        delay: at + 0.25 + i * 0.13, dur: 0.35, tag: tag,
+        update: function (p) { t.setAttribute('fill-opacity', String(p)); },
+      });
+    });
+
+    (spec.highlights || []).forEach(function (hl) {
+      var line = (hl.line || 1) - 1;
+      var y = -h / 2 + padY + line * lh - lh / 2 + size * 0.4 + lh / 2;
+      var r = svg('rect', {
+        x: -w / 2 + 8, y: y - lh / 2 + 2, width: w - 16, height: lh - 4, rx: 8,
+        fill: color(hl.color, 'yellow'), 'fill-opacity': 0,
+      }, null);
+      g.insertBefore(r, body);
+      addTween({
+        delay: at + (hl.at || 0), dur: 0.45, tag: tag,
+        update: function (p) { r.setAttribute('fill-opacity', String(0.16 * p)); },
+      });
+    });
+    return { w: w, h: h };
+  };
+
+  Player.prototype.buildPlot = function (g, spec, at, tag) {
+    var w = (spec.w || 6) * SC;
+    var h = (spec.h || 3.6) * SC;
+    var c = color(spec.color, 'blue');
+
+    // Axes: an L from top-left down to origin and out to the right.
+    var axes = svg('path', {
+      d: 'M' + (-w / 2) + ' ' + (-h / 2) + ' V' + (h / 2) + ' H' + (w / 2),
+      stroke: COLORS.grey, 'stroke-width': 3.5, fill: 'none', 'stroke-linecap': 'round',
+    }, g);
+    drawStroke(axes, at, 0.6, tag);
+
+    var pts = spec.points;
+    if (!pts && spec.fn) {
+      var fn;
+      try { fn = new Function('x', 'return (' + spec.fn + ');'); } catch (e) { fn = function () { return 0; }; }
+      var dom = spec.domain || [0, 1];
+      pts = [];
+      for (var i = 0; i <= 80; i++) {
+        var x = dom[0] + ((dom[1] - dom[0]) * i) / 80;
+        pts.push([x, fn(x)]);
+      }
+    }
+    pts = pts || [];
+    if (pts.length > 1) {
+      var xs = pts.map(function (p) { return p[0]; });
+      var ys = pts.map(function (p) { return p[1]; });
+      var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+      var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+      if (x1 === x0) x1 = x0 + 1;
+      if (y1 === y0) y1 = y0 + 1;
+      var inset = 22;
+      var mapX = function (x) { return -w / 2 + inset + ((x - x0) / (x1 - x0)) * (w - inset * 2); };
+      var mapY = function (y) { return h / 2 - inset - ((y - y0) / (y1 - y0)) * (h - inset * 2); };
+      var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + mapX(p[0]).toFixed(1) + ' ' + mapY(p[1]).toFixed(1); }).join(' ');
+      var curve = svg('path', { d: d, stroke: c, 'stroke-width': 5, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
+      drawStroke(curve, at + 0.45, 1.1, tag);
+    }
+
+    if (spec.xlabel) {
+      var xg = svg('g', { transform: 'translate(0,' + (h / 2 + 38) + ')' }, g);
+      animateWords(buildText(xg, { text: spec.xlabel, size: 0.62, color: 'grey', italic: true }, { base: 40 }).words, at + 0.4, tag, 0.02, 0.3);
+    }
+    if (spec.ylabel) {
+      var yg = svg('g', { transform: 'translate(' + (-w / 2 - 34) + ',0) rotate(-90)' }, g);
+      animateWords(buildText(yg, { text: spec.ylabel, size: 0.62, color: 'grey', italic: true }, { base: 40 }).words, at + 0.4, tag, 0.02, 0.3);
+    }
+    if (spec.label) {
+      var lg = svg('g', { transform: 'translate(0,' + (-h / 2 - 34) + ')' }, g);
+      animateWords(buildText(lg, { text: spec.label, size: 0.72, color: spec.color || 'blue' }, { base: 40 }).words, at + 0.3, tag, 0.03, 0.3);
+    }
+    return { w: w, h: h };
+  };
+
+  Player.prototype.buildHighlight = function (g, spec, at, tag) {
+    g.setAttribute('transform', 'translate(0,0)');
+    var target = this.live[spec.target];
+    var pad = (spec.pad == null ? 0.22 : spec.pad) * SC;
+    var x, y, w, h;
+    if (target) {
+      x = wx(target.world.x) - target.size.w / 2 - pad;
+      y = wy(target.world.y) - target.size.h / 2 - pad;
+      w = target.size.w + pad * 2;
+      h = target.size.h + pad * 2;
+    } else {
+      var p = spec.pos || [0, 0];
+      w = (spec.w || 3) * SC; h = (spec.h || 1.4) * SC;
+      x = wx(p[0]) - w / 2; y = wy(p[1]) - h / 2;
+    }
+    var r = svg('path', {
+      d: roundedRectPath(x, y, w, h, 18),
+      stroke: color(spec.color, 'yellow'), 'stroke-width': 5, fill: 'none',
+    }, g);
+    drawStroke(r, at, 0.55, tag);
+    if (spec.flash !== false) {
+      addTween({
+        delay: at + 0.6, dur: 0.9, tag: tag, ease: linear,
+        update: function (p) {
+          r.setAttribute('stroke-opacity', String(0.75 + 0.25 * Math.cos(p * Math.PI * 2)));
+        },
+      });
+    }
+    if (spec.label) {
+      var lg = svg('g', { transform: 'translate(' + (x + w / 2) + ',' + (y - 30) + ')' }, g);
+      animateWords(buildText(lg, { text: spec.label, size: 0.66, color: spec.color || 'yellow', italic: true }, { base: 40 }).words, at + 0.35, tag, 0.03, 0.3);
+    }
+    return { w: w, h: h };
+  };
+
+  // ---------------------------------------------------------------- boot
+
+  window.Planim = {
+    mount: function (rootEl, data) { return new Player(rootEl, data); },
+    COLORS: COLORS,
+  };
+})();
+
+</script>
+<script>
+window.PLANIM_DATA = {"title":"Plan · Your own full-duplex model","scenes":[{"id":"intro","narration":"Here is the plan for a speech model of your own that listens while it talks, and changes how it answers when you sound different.","elements":[{"type":"title","text":"A Full-Duplex Model That Listens to Tone","pos":[0,0.7]},{"type":"text","text":"the plan, as an animation","pos":[0,-0.9],"color":"yellow","italic":true,"size":0.8,"at":1.1}]},{"id":"today","narration":"What you have today is a chain. It hears a whole turn, decides, writes a reply, then speaks. It works, but it takes turns, and that part is not new.","elements":[{"type":"node","id":"you","label":"You speak","pos":[-6.2,1.2],"color":"gold"},{"type":"node","id":"asr","label":"Speech to text","pos":[-3.1,1.2],"color":"grey","at":0.4},{"type":"node","id":"policy","label":"Policy","pos":[0,1.2],"color":"grey","at":0.8},{"type":"node","id":"llm","label":"LLM","pos":[2.6,1.2],"color":"grey","at":1.2},{"type":"node","id":"tts","label":"Voice","pos":[5.6,1.2],"color":"grey","at":1.6},{"type":"arrow","from":"you","to":"asr","at":2},{"type":"arrow","from":"asr","to":"policy","at":2.2},{"type":"arrow","from":"policy","to":"llm","at":2.4},{"type":"arrow","from":"llm","to":"tts","at":2.6},{"type":"text","text":"waits for you to finish","pos":[0,-1],"color":"red","size":1,"bold":true,"at":3.2}]},{"id":"duplex","narration":"A full-duplex model has no turns. Every eighty milliseconds it reads one slice of your audio and writes one slice of its own. So it can murmur, start early, or stop when you cut in.","elements":[{"type":"node","id":"user","label":"Your audio","pos":[-5.2,1.4],"color":"gold"},{"type":"node","id":"moshi","label":"Moshi","pos":[0,0.6],"color":"teal","at":0.5},{"type":"node","id":"own","label":"Its audio","pos":[5.2,1.4],"color":"teal","at":1},{"type":"node","id":"words","label":"Its words","pos":[5.2,-0.4],"color":"grey","at":1.3},{"type":"arrow","from":"user","to":"moshi","label":"80 ms","at":1.7},{"type":"arrow","from":"moshi","to":"own","label":"80 ms","at":2},{"type":"arrow","from":"moshi","to":"words","at":2.2},{"type":"text","text":"it listens while it talks","pos":[0,-2],"color":"green","size":1,"bold":true,"at":2.8}]},{"id":"problem","narration":"Here is the catch. Say the same words in a plain voice and in a hesitant voice, and today's models mostly give the same reply. In one recent test of seven voice systems, whispered requests almost never got a quieter answer.","elements":[{"type":"node","id":"plain","label":"Plain voice","pos":[-5.4,2.4],"color":"gold"},{"type":"node","id":"hesitant","label":"Hesitant voice","pos":[-5.4,0.6],"color":"gold","at":0.4},{"type":"text","text":"same words","pos":[-5.4,1.5],"size":0.75,"italic":true,"at":0.8},{"type":"node","id":"moshi","label":"Moshi","pos":[0,1.5],"color":"teal","at":1},{"type":"node","id":"reply","label":"Same reply","pos":[5.2,1.5],"color":"red","at":1.6},{"type":"arrow","from":"plain","to":"moshi","at":1.9},{"type":"arrow","from":"hesitant","to":"moshi","at":2.1},{"type":"arrow","from":"moshi","to":"reply","at":2.4},{"type":"text","text":"35 whispered requests, 7 systems","pos":[0,-1.2],"size":0.85,"at":3},{"type":"text","text":"2 quiet replies","pos":[0,-2.2],"color":"red","size":1.2,"bold":true,"at":3.6}]},{"id":"change","narration":"The fix is in the data. Take one script, record it in three deliveries, and write a different right answer for each. Train one adapter on that. Then scramble which answer goes with which delivery, and train a second adapter as the control.","elements":[{"type":"node","id":"scripts","label":"Scripts","pos":[-6.3,1.5],"color":"grey"},{"type":"node","id":"deliveries","label":"3 deliveries","pos":[-3,2.6],"color":"gold","at":0.5},{"type":"node","id":"replies","label":"3 right replies","pos":[-3,0.4],"color":"teal","at":0.9},{"type":"node","id":"paired","label":"Paired data","pos":[1.2,2.6],"color":"green","at":1.5},{"type":"node","id":"shuffled","label":"Shuffled data","pos":[1.2,0.4],"color":"grey","at":1.9},{"type":"node","id":"lora_a","label":"Adapter A","pos":[5.6,2.6],"color":"green","at":2.4},{"type":"node","id":"lora_b","label":"Adapter B","pos":[5.6,0.4],"color":"grey","at":2.7},{"type":"arrow","from":"scripts","to":"deliveries","at":3},{"type":"arrow","from":"scripts","to":"replies","at":3.1},{"type":"arrow","from":"deliveries","to":"paired","at":3.3},{"type":"arrow","from":"replies","to":"shuffled","at":3.4},{"type":"arrow","from":"paired","to":"lora_a","label":"train","at":3.7},{"type":"arrow","from":"shuffled","to":"lora_b","label":"train","at":3.9},{"type":"text","text":"same audio, same replies, pairing scrambled","pos":[1.2,-1.3],"size":0.8,"italic":true,"at":4.4}]},{"id":"test","narration":"Then the test. People the model has never heard say the same words two ways. Three models answer. Blind raters judge whether each reply fits the voice it was made for. Only the paired adapter should win, and that is the whole claim.","elements":[{"type":"node","id":"people","label":"New speakers","pos":[-5.8,1],"color":"gold"},{"type":"node","id":"stock","label":"Stock Moshi","pos":[0,2.7],"color":"grey","at":0.5},{"type":"node","id":"a","label":"Adapter A","pos":[0,1],"color":"green","at":0.8},{"type":"node","id":"b","label":"Adapter B","pos":[0,-0.7],"color":"grey","at":1.1},{"type":"node","id":"raters","label":"Blind raters","pos":[5.8,1],"color":"blue","at":1.5},{"type":"arrow","from":"people","to":"stock","at":1.9},{"type":"arrow","from":"people","to":"a","at":2},{"type":"arrow","from":"people","to":"b","at":2.1},{"type":"arrow","from":"stock","to":"raters","at":2.4},{"type":"arrow","from":"a","to":"raters","at":2.5},{"type":"arrow","from":"b","to":"raters","at":2.6},{"type":"highlight","target":"a","label":"should win","at":3.2},{"type":"text","text":"same words, two deliveries","pos":[-5.8,-0.6],"size":0.75,"italic":true,"at":1.7}]},{"id":"risks","narration":"It can fail, and the plan says how. The model might learn one kind phrase and use it everywhere. Fine-tuning might break its timing. Each risk has a check that would catch it.","elements":[{"type":"text","text":"Ways it fails","pos":[-4.2,2.8],"color":"red","bold":true},{"type":"list","pos":[-7.2,0.6],"stagger":0.6,"at":0.4,"size":0.85,"items":["Learns one kind phrase","Timing breaks","Keys on synthetic voices","Too few speakers"]},{"type":"text","text":"What catches it","pos":[3.4,2.8],"color":"green","bold":true,"at":2.6},{"type":"list","pos":[0.6,0.6],"stagger":0.6,"at":3,"size":0.85,"items":["Shuffled control","Full-Duplex-Bench","Real people in the test","Per-speaker results"]}]},{"id":"rollout","narration":"The rollout has gates. Nothing costs money until the baseline works on your Mac. Thirty dollars proves the training loop. The full experiment fits under a hundred and fifty. If it fails twice with the controls in place, stop and publish what you learned.","elements":[{"type":"text","text":"Stages and cost","pos":[0,3],"bold":true},{"type":"list","pos":[-6.6,0.4],"stagger":0.7,"at":0.4,"size":0.9,"items":["0 · Learn, and talk to Moshi · $0","1 · Baseline on stock Moshi · $0","2 · Overfit 20 clips on a rented GPU · up to $30","3 · Paired against shuffled · up to $120","4 · Write it up"]},{"type":"text","text":"fails twice: stop and publish","pos":[0,-2.5],"color":"yellow","size":0.9,"at":4.4}]},{"id":"payoff","narration":"If it works, you have your own weights, your own data, and a result a skeptical engineer can check. If it does not, you have a careful account of where it broke. Both are worth writing about.","elements":[{"type":"title","text":"Your Weights. Your Data. A Result That Holds Up.","pos":[0,0.6],"size":0.8},{"type":"text","text":"start with stage 0 this weekend","pos":[0,-1.2],"color":"green","size":0.9,"at":1.4}]}]};
+Planim.mount(document.getElementById('planim'), window.PLANIM_DATA);
+</script>
+</body>
+</html>

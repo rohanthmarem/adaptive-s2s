@@ -9,6 +9,17 @@ This is **v1: turn-adaptive, not live**. It hears a whole turn, then replies. Ev
 The plan, the two design perspectives (Fable and Astra) and the evaluation design are in
 [`docs/PLAN.md`](docs/PLAN.md).
 
+## Where this is going
+
+The goal has moved on from this cascade. The next step is a **full-duplex model of our own**: Kyutai's Moshi,
+fine-tuned so that its replies depend on how the user sounds, with an experiment that proves it.
+
+- Plan: [`docs/duplex/PLAN.md`](docs/duplex/PLAN.md)
+- Background, from zero: [`docs/duplex/primer.html`](docs/duplex/primer.html)
+- Research with sources: [`docs/duplex/research/`](docs/duplex/research/)
+
+The cascade below stays. It is the baseline, the source of draft training targets, and the measurement code.
+
 ```
 user audio ──> ASR ──────────────> words ──> register cues ─┐
      │                                                      ├─> style state ──> policy ─┬─> LLM style brief ──> reply text ─┐

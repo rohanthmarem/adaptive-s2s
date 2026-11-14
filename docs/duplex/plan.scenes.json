@@ -1,0 +1,134 @@
+{
+  "title": "Plan · Your own full-duplex model",
+  "scenes": [
+    {
+      "id": "intro",
+      "narration": "Here is the plan for a speech model of your own that listens while it talks, and changes how it answers when you sound different.",
+      "elements": [
+        { "type": "title", "text": "A Full-Duplex Model That Listens to Tone", "pos": [0, 0.7] },
+        { "type": "text", "text": "the plan, as an animation", "pos": [0, -0.9], "color": "yellow", "italic": true, "size": 0.8, "at": 1.1 }
+      ]
+    },
+    {
+      "id": "today",
+      "narration": "What you have today is a chain. It hears a whole turn, decides, writes a reply, then speaks. It works, but it takes turns, and that part is not new.",
+      "elements": [
+        { "type": "node", "id": "you", "label": "You speak", "pos": [-6.2, 1.2], "color": "gold" },
+        { "type": "node", "id": "asr", "label": "Speech to text", "pos": [-3.1, 1.2], "color": "grey", "at": 0.4 },
+        { "type": "node", "id": "policy", "label": "Policy", "pos": [0, 1.2], "color": "grey", "at": 0.8 },
+        { "type": "node", "id": "llm", "label": "LLM", "pos": [2.6, 1.2], "color": "grey", "at": 1.2 },
+        { "type": "node", "id": "tts", "label": "Voice", "pos": [5.6, 1.2], "color": "grey", "at": 1.6 },
+        { "type": "arrow", "from": "you", "to": "asr", "at": 2.0 },
+        { "type": "arrow", "from": "asr", "to": "policy", "at": 2.2 },
+        { "type": "arrow", "from": "policy", "to": "llm", "at": 2.4 },
+        { "type": "arrow", "from": "llm", "to": "tts", "at": 2.6 },
+        { "type": "text", "text": "waits for you to finish", "pos": [0, -1.0], "color": "red", "size": 1.0, "bold": true, "at": 3.2 }
+      ]
+    },
+    {
+      "id": "duplex",
+      "narration": "A full-duplex model has no turns. Every eighty milliseconds it reads one slice of your audio and writes one slice of its own. So it can murmur, start early, or stop when you cut in.",
+      "elements": [
+        { "type": "node", "id": "user", "label": "Your audio", "pos": [-5.2, 1.4], "color": "gold" },
+        { "type": "node", "id": "moshi", "label": "Moshi", "pos": [0, 0.6], "color": "teal", "at": 0.5 },
+        { "type": "node", "id": "own", "label": "Its audio", "pos": [5.2, 1.4], "color": "teal", "at": 1.0 },
+        { "type": "node", "id": "words", "label": "Its words", "pos": [5.2, -0.4], "color": "grey", "at": 1.3 },
+        { "type": "arrow", "from": "user", "to": "moshi", "label": "80 ms", "at": 1.7 },
+        { "type": "arrow", "from": "moshi", "to": "own", "label": "80 ms", "at": 2.0 },
+        { "type": "arrow", "from": "moshi", "to": "words", "at": 2.2 },
+        { "type": "text", "text": "it listens while it talks", "pos": [0, -2.0], "color": "green", "size": 1.0, "bold": true, "at": 2.8 }
+      ]
+    },
+    {
+      "id": "problem",
+      "narration": "Here is the catch. Say the same words in a plain voice and in a hesitant voice, and today's models mostly give the same reply. In one recent test of seven voice systems, whispered requests almost never got a quieter answer.",
+      "elements": [
+        { "type": "node", "id": "plain", "label": "Plain voice", "pos": [-5.4, 2.4], "color": "gold" },
+        { "type": "node", "id": "hesitant", "label": "Hesitant voice", "pos": [-5.4, 0.6], "color": "gold", "at": 0.4 },
+        { "type": "text", "text": "same words", "pos": [-5.4, 1.5], "size": 0.75, "italic": true, "at": 0.8 },
+        { "type": "node", "id": "moshi", "label": "Moshi", "pos": [0, 1.5], "color": "teal", "at": 1.0 },
+        { "type": "node", "id": "reply", "label": "Same reply", "pos": [5.2, 1.5], "color": "red", "at": 1.6 },
+        { "type": "arrow", "from": "plain", "to": "moshi", "at": 1.9 },
+        { "type": "arrow", "from": "hesitant", "to": "moshi", "at": 2.1 },
+        { "type": "arrow", "from": "moshi", "to": "reply", "at": 2.4 },
+        { "type": "text", "text": "35 whispered requests, 7 systems", "pos": [0, -1.2], "size": 0.85, "at": 3.0 },
+        { "type": "text", "text": "2 quiet replies", "pos": [0, -2.2], "color": "red", "size": 1.2, "bold": true, "at": 3.6 }
+      ]
+    },
+    {
+      "id": "change",
+      "narration": "The fix is in the data. Take one script, record it in three deliveries, and write a different right answer for each. Train one adapter on that. Then scramble which answer goes with which delivery, and train a second adapter as the control.",
+      "elements": [
+        { "type": "node", "id": "scripts", "label": "Scripts", "pos": [-6.3, 1.5], "color": "grey" },
+        { "type": "node", "id": "deliveries", "label": "3 deliveries", "pos": [-3.0, 2.6], "color": "gold", "at": 0.5 },
+        { "type": "node", "id": "replies", "label": "3 right replies", "pos": [-3.0, 0.4], "color": "teal", "at": 0.9 },
+        { "type": "node", "id": "paired", "label": "Paired data", "pos": [1.2, 2.6], "color": "green", "at": 1.5 },
+        { "type": "node", "id": "shuffled", "label": "Shuffled data", "pos": [1.2, 0.4], "color": "grey", "at": 1.9 },
+        { "type": "node", "id": "lora_a", "label": "Adapter A", "pos": [5.6, 2.6], "color": "green", "at": 2.4 },
+        { "type": "node", "id": "lora_b", "label": "Adapter B", "pos": [5.6, 0.4], "color": "grey", "at": 2.7 },
+        { "type": "arrow", "from": "scripts", "to": "deliveries", "at": 3.0 },
+        { "type": "arrow", "from": "scripts", "to": "replies", "at": 3.1 },
+        { "type": "arrow", "from": "deliveries", "to": "paired", "at": 3.3 },
+        { "type": "arrow", "from": "replies", "to": "shuffled", "at": 3.4 },
+        { "type": "arrow", "from": "paired", "to": "lora_a", "label": "train", "at": 3.7 },
+        { "type": "arrow", "from": "shuffled", "to": "lora_b", "label": "train", "at": 3.9 },
+        { "type": "text", "text": "same audio, same replies, pairing scrambled", "pos": [1.2, -1.3], "size": 0.8, "italic": true, "at": 4.4 }
+      ]
+    },
+    {
+      "id": "test",
+      "narration": "Then the test. People the model has never heard say the same words two ways. Three models answer. Blind raters judge whether each reply fits the voice it was made for. Only the paired adapter should win, and that is the whole claim.",
+      "elements": [
+        { "type": "node", "id": "people", "label": "New speakers", "pos": [-5.8, 1.0], "color": "gold" },
+        { "type": "node", "id": "stock", "label": "Stock Moshi", "pos": [0, 2.7], "color": "grey", "at": 0.5 },
+        { "type": "node", "id": "a", "label": "Adapter A", "pos": [0, 1.0], "color": "green", "at": 0.8 },
+        { "type": "node", "id": "b", "label": "Adapter B", "pos": [0, -0.7], "color": "grey", "at": 1.1 },
+        { "type": "node", "id": "raters", "label": "Blind raters", "pos": [5.8, 1.0], "color": "blue", "at": 1.5 },
+        { "type": "arrow", "from": "people", "to": "stock", "at": 1.9 },
+        { "type": "arrow", "from": "people", "to": "a", "at": 2.0 },
+        { "type": "arrow", "from": "people", "to": "b", "at": 2.1 },
+        { "type": "arrow", "from": "stock", "to": "raters", "at": 2.4 },
+        { "type": "arrow", "from": "a", "to": "raters", "at": 2.5 },
+        { "type": "arrow", "from": "b", "to": "raters", "at": 2.6 },
+        { "type": "highlight", "target": "a", "label": "should win", "at": 3.2 },
+        { "type": "text", "text": "same words, two deliveries", "pos": [-5.8, -0.6], "size": 0.75, "italic": true, "at": 1.7 }
+      ]
+    },
+    {
+      "id": "risks",
+      "narration": "It can fail, and the plan says how. The model might learn one kind phrase and use it everywhere. Fine-tuning might break its timing. Each risk has a check that would catch it.",
+      "elements": [
+        { "type": "text", "text": "Ways it fails", "pos": [-4.2, 2.8], "color": "red", "bold": true },
+        { "type": "list", "pos": [-7.2, 0.6], "stagger": 0.6, "at": 0.4, "size": 0.85,
+          "items": ["Learns one kind phrase", "Timing breaks", "Keys on synthetic voices", "Too few speakers"] },
+        { "type": "text", "text": "What catches it", "pos": [3.4, 2.8], "color": "green", "bold": true, "at": 2.6 },
+        { "type": "list", "pos": [0.6, 0.6], "stagger": 0.6, "at": 3.0, "size": 0.85,
+          "items": ["Shuffled control", "Full-Duplex-Bench", "Real people in the test", "Per-speaker results"] }
+      ]
+    },
+    {
+      "id": "rollout",
+      "narration": "The rollout has gates. Nothing costs money until the baseline works on your Mac. Thirty dollars proves the training loop. The full experiment fits under a hundred and fifty. If it fails twice with the controls in place, stop and publish what you learned.",
+      "elements": [
+        { "type": "text", "text": "Stages and cost", "pos": [0, 3.0], "bold": true },
+        { "type": "list", "pos": [-6.6, 0.4], "stagger": 0.7, "at": 0.4, "size": 0.9,
+          "items": [
+            "0 · Learn, and talk to Moshi · $0",
+            "1 · Baseline on stock Moshi · $0",
+            "2 · Overfit 20 clips on a rented GPU · up to $30",
+            "3 · Paired against shuffled · up to $120",
+            "4 · Write it up"
+          ] },
+        { "type": "text", "text": "fails twice: stop and publish", "pos": [0, -2.5], "color": "yellow", "size": 0.9, "at": 4.4 }
+      ]
+    },
+    {
+      "id": "payoff",
+      "narration": "If it works, you have your own weights, your own data, and a result a skeptical engineer can check. If it does not, you have a careful account of where it broke. Both are worth writing about.",
+      "elements": [
+        { "type": "title", "text": "Your Weights. Your Data. A Result That Holds Up.", "pos": [0, 0.6], "size": 0.8 },
+        { "type": "text", "text": "start with stage 0 this weekend", "pos": [0, -1.2], "color": "green", "size": 0.9, "at": 1.4 }
+      ]
+    }
+  ]
+}
