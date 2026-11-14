@@ -188,7 +188,16 @@ to one of the fallbacks in section 8.
 - **Found a snag:** the packaged offline script (`moshi_mlx.run_inference`) fails on the standard Moshi
   weights, because it expects a `config.json` that those weight repos do not have. A 60-line driver (`docs/duplex/moshi_offline.py`) that
   loads the model the way the live app does gets around it. It is the seed of the duplex runner.
-- **First offline run:** pending; the 8.5 GB download was still running when this was written.
+- **First offline run (8-bit weights, two demo clips, each padded with 4 s of silence before and 10 s after):**
+  - Speed: 0.7x real time with this simple driver, so about 27 s to process 19 s of audio. Fine for
+    offline experiments. Real-time talk needs the live app, which was not measured here.
+  - Moshi greets at 0.5 s, before the user speaks, in both runs: "Hey, how was your day?"
+  - "I just got laid off this morning and I don't know what to do": **no reply at all** in the 10 s after.
+  - "Can we move it to Friday?": after a 4 s gap it said "I'm sorry, but I'm not comfortable with that. We
+    discussed this a few weeks ago, and we both agreed to meet on Tuesday."
+  - One seed and one run each, so this is an anecdote. It still shows the stage 1 baseline will not be
+    flattering, and that the replies will need people to rate them.
+  - Audio is in `out/moshi-first-run/` (not in git).
 
 To talk to Moshi yourself (stage 0), with headphones on:
 
