@@ -1,0 +1,116 @@
+speaker: Ryan
+
+deliveries:
+  plain: >-
+    Calm, even and conversational from the first word to the last. Normal pace, normal loudness,
+    no strong emotion.
+  sad: >-
+    He has been crying and is still close to tears. Every sentence sounds heavy and shaky, quiet and slow,
+    the voice cracking on some words, with shaky breaths. Keep the sadness the whole way through,
+    including the last word.
+  flat: >-
+    Completely bored and checked out. Flat monotone the whole time, low energy, almost no rise or fall
+    in pitch, a little mumbled, like he does not care at all. Never brightens.
+  hesitant: >-
+    Unsure and anxious about saying the wrong thing. Speaks slowly with stops and restarts in every
+    sentence, trailing off, a nervous uncertain tone throughout.
+  frustrated: >-
+    Fed up and angry, trying to stay polite but failing. Tense, clipped and emphatic in every sentence,
+    exasperated sighs, getting sharper toward the end.
+  excited: >-
+    Thrilled and almost breathless with happiness. Bright, fast and animated in every sentence, big pitch
+    movement, laughing a little, joy all the way to the end.
+  anxious: >-
+    Scared and on edge. Fast, tight, slightly breathless voice in every sentence, words tumbling out,
+    worried the whole time.
+
+scenes:
+  - id: dog
+    title: Had to put his dog down
+    situation: >-
+      Sam, 24, had to have his dog Biscuit put down this morning after fourteen years. It is evening. He is
+      calling a friend because the apartment feels empty and he does not want to be alone with it.
+    deliveries: [sad, plain]
+    turns:
+      - "Hey. Sorry, can I talk for a minute?"
+      - "I had to put Biscuit down this morning. She was fourteen. The vet said it was time."
+      - "I keep walking into the kitchen to feed her, and then I remember. I don't really know what to do with myself tonight."
+
+  - id: classes
+    title: Has to pick classes and does not care
+    situation: >-
+      Jordan, 16, was told by his mom he has to pick his electives for next year before Friday. He thinks
+      all of the options are boring and he would rather be doing anything else.
+    deliveries: [flat, plain]
+    turns:
+      - "Hey. My mom said I should ask you about this."
+      - "I have to pick my electives for next year. It's due Friday."
+      - "I don't know. They're all kind of boring. Art, business, or computer stuff. Whatever. Just tell me which one."
+
+  - id: tax_letter
+    title: Got a letter from the tax office
+    situation: >-
+      Priya, 22, just got her first letter from the tax office. It says she may owe money and asks her to
+      respond. She does not understand it and is worried she did something wrong.
+    deliveries: [hesitant, plain]
+    turns:
+      - "Hi, um, can I ask you something kind of dumb?"
+      - "I got this letter from the tax office. It says I might, um, owe something? And I have to respond by the end of the month."
+      - "I don't, I don't really get what I did wrong. Like, I'm not sure what I'm supposed to do first."
+
+  - id: package
+    title: Package lost for the third time
+    situation: >-
+      Marcus ordered a replacement laptop charger. The delivery has been marked delivered but missing three
+      times in two weeks, and he needs the laptop for work tomorrow.
+    deliveries: [frustrated, plain]
+    turns:
+      - "Hi. I need help with an order, again."
+      - "This is the third time my package says delivered and it's not here. Three times in two weeks."
+      - "I need this charger for work tomorrow. I don't want another apology, I want to know what you're actually going to do."
+
+  - id: offer
+    title: Just got the job offer
+    situation: >-
+      Dev, 21, just hung up after being offered his dream co-op at a robotics startup. He applied to sixty
+      places. He is calling a friend right away.
+    deliveries: [excited, plain]
+    turns:
+      - "Oh my god, hey, do you have a second?"
+      - "I just got off the phone. I got the robotics co-op. The one I really wanted!"
+      - "I applied to like sixty places. I start in January. What should I do to get ready?"
+
+  - id: results
+    title: Waiting for biopsy results
+    situation: >-
+      Alex, 30, had a biopsy last week. The clinic called and asked him to come in tomorrow morning to talk
+      about the results, and would not say anything on the phone.
+    deliveries: [anxious, plain]
+    turns:
+      - "Hey, sorry, are you free? I need to talk to someone."
+      - "The clinic called. They want me to come in tomorrow to go over my biopsy results, and they wouldn't tell me anything on the phone."
+      - "That's bad, right? They wouldn't make me come in if it was nothing. I can't stop thinking about it."
+
+  - id: callback
+    title: Same words, the job call went either way
+    situation: >-
+      Chris, 23, interviewed for a job he really wanted. The company just called him back with their
+      decision. The words he says do not reveal the decision. Only his voice does.
+    deliveries: [excited, sad, plain]
+    same_words: true
+    turns:
+      - "Hey, do you have a minute?"
+      - "So, they called me back. About the job."
+      - "I just got off the phone with them."
+
+  - id: grades
+    title: Same words, the grade went either way
+    situation: >-
+      Taylor, 19, just checked the final grade for the course that decides whether they stay in their
+      program. The words do not reveal the grade. Only the voice does.
+    deliveries: [excited, sad, plain]
+    same_words: true
+    turns:
+      - "Hey. Can I tell you something?"
+      - "I just checked my grade for that course. The one that decides if I stay in the program."
+      - "It's posted."

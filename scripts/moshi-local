@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+cd "$ROOT"
+if [ ! -x .venv-moshi/bin/python ]; then
+    uv venv --python 3.12 .venv-moshi
+    uv pip install --python .venv-moshi/bin/python 'moshi_mlx==0.3.0'
+fi
+export HF_HUB_OFFLINE=${HF_HUB_OFFLINE:-1}
+exec .venv-moshi/bin/python -m moshi_mlx.local_web -q 8 "$@"
