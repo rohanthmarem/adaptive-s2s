@@ -1,6 +1,6 @@
 [verify]
 fast = [".venv/bin/python -m pytest -q", ".venv-moshi/bin/python scripts/test_moshi_hooks.py", ".venv/bin/python scripts/verify_moshi_flatten.py"]
-full = [".venv-moshi/bin/python scripts/verify_moshi_hooks.py", ".venv-moshi/bin/python scripts/verify_moshi_matched.py", ".venv-moshi/bin/python scripts/verify_moshi_review.py", ".venv-moshi/bin/python scripts/verify_moshi_context.py", ".venv/bin/python scripts/verify_moshi_context_review.py", ".venv/bin/python scripts/verify_duplex.py"]
+full = [".venv-moshi/bin/python scripts/verify_moshi_hooks.py", ".venv-moshi/bin/python scripts/verify_moshi_matched.py", ".venv-moshi/bin/python scripts/verify_moshi_review.py", ".venv-moshi/bin/python scripts/verify_moshi_context.py", ".venv/bin/python scripts/verify_moshi_context_review.py", ".venv/bin/python scripts/verify_duplex.py", ".venv-moshi/bin/python scripts/verify_tone_probe.py", ".venv-moshi/bin/python scripts/verify_emotion_atlas.py"]
 timeout_s = 600
 ignore = ["*.md"]
 require_before_done = true

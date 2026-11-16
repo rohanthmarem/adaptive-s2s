@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moshi Neuron Atlas</title>
+<script>(function(){var m=null;try{m=localStorage.getItem('mode')}catch(e){}if(!m)m=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.mode=m})();</script>
+<style>
+__FONTS__
+:root{color-scheme:light;
+  --paper:#f4f0e6;--paper-2:#eae5d8;--surface:#fbf8f1;--ink:#11141c;--ink-2:rgb(17 20 28 / .64);--ink-3:rgb(17 20 28 / .5);
+  --rule:rgb(17 24 48 / .09);--rule-strong:rgb(17 24 48 / .16);--accent:#2200ff;--sad:#2200ff;--happy:#e0571f;--bar:#b9b3a3;--mid:#e3ded1;
+  --shadow:0 0 0 1px rgb(0 0 0 / .06),0 1px 2px -1px rgb(0 0 0 / .06),0 2px 4px 0 rgb(0 0 0 / .04);
+  --pixel:"Geist Pixel",Menlo,ui-monospace,monospace;--serif:"Merriweather",Georgia,serif;
+  --mono:Menlo,ui-monospace,SFMono-Regular,Monaco,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif}
+:root[data-mode="dark"]{color-scheme:dark;
+  --paper:#0c0c0e;--paper-2:#1a1a1d;--surface:#131316;--ink:#ecebe6;--ink-2:rgb(236 235 230 / .66);--ink-3:rgb(236 235 230 / .48);
+  --rule:rgb(255 255 255 / .09);--rule-strong:rgb(255 255 255 / .18);--accent:#8c84ff;--sad:#8c84ff;--happy:#f07a43;--bar:#4a4944;--mid:#26262b;
+  --shadow:0 0 0 1px rgb(255 255 255 / .08),0 1px 2px -1px rgb(0 0 0 / .4),0 2px 4px 0 rgb(0 0 0 / .3)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+button,select,input{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+a{color:var(--accent)}
+h1,h2,h3{margin:0;font-weight:400}
+.top{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:18px 24px;border-bottom:1px solid var(--rule-strong)}
+.brand{font:400 20px/1 var(--pixel)}
+.brand span{color:var(--ink-3)}
+.views{display:flex;gap:4px}
+.views button{padding:7px 12px;font:13px var(--sans);color:var(--ink-2);box-shadow:inset 0 0 0 1px transparent}
+.views button[aria-pressed="true"]{color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule-strong);background:var(--surface)}
+.spacer{flex:1}
+.mode{width:30px;height:30px;display:grid;place-items:center;color:var(--ink-3)}
+.mode svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round}
+.mode .to-light,[data-mode="dark"] .mode .to-dark{display:none}[data-mode="dark"] .mode .to-light{display:block}
+.view{display:none}.view.on{display:block}
+.atlas{display:grid;grid-template-columns:360px minmax(0,1fr);min-height:640px}
+.side{border-right:1px solid var(--rule-strong);display:flex;flex-direction:column;max-height:900px;position:sticky;top:0}
+.filters{padding:14px 16px;border-bottom:1px solid var(--rule);display:grid;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{padding:4px 8px;font:12px var(--sans);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--rule-strong)}
+.chip[aria-pressed="true"]{color:var(--paper);background:var(--ink);box-shadow:none}
+.chip.sad[aria-pressed="true"]{background:var(--sad)}.chip.happy[aria-pressed="true"]{background:var(--happy)}
+.row2{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row2 select,.row2 input{background:var(--surface);border:0;box-shadow:inset 0 0 0 1px var(--rule-strong);padding:6px 8px;font-size:12px}
+.row2 input{flex:1;min-width:120px}
+.count{font:11px var(--mono);color:var(--ink-3)}
+.list{overflow-y:auto;flex:1}
+.item{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;padding:11px 16px;border-bottom:1px solid var(--rule);cursor:pointer;text-align:left;width:100%}
+.item:hover{background:var(--surface)}
+.item[aria-current="true"]{background:var(--surface);box-shadow:inset 2px 0 0 var(--accent)}
+.sign{font:500 15px/1.2 var(--mono);color:var(--ink-3)}
+.item .id{font:11px var(--mono);color:var(--ink-3)}
+.item .desc{font:13px/1.45 var(--sans);color:var(--ink);margin-top:2px}
+.tag{display:inline-block;margin-left:6px;padding:0 6px;font:10.5px/1.6 var(--mono);color:var(--paper);background:var(--ink-3)}
+.tag.sad{background:var(--sad)}.tag.happy{background:var(--happy)}
+.detail{padding:28px 32px 60px;min-width:0}
+.dhead .kind{font:500 12px var(--sans);color:var(--ink-3);text-transform:lowercase;letter-spacing:.05em}
+.dhead .kind b{color:var(--accent);font-weight:500}
+.dhead h1{font:400 26px/1.25 var(--serif);margin:8px 0 6px;letter-spacing:-.01em}
+.dhead .meta{font:12px var(--mono);color:var(--ink-3)}
+.tabs{display:flex;gap:18px;margin:22px 0 18px;border-bottom:1px solid var(--rule-strong)}
+.tabs button{padding:8px 0;font:13px var(--sans);color:var(--ink-3);box-shadow:inset 0 -2px 0 transparent}
+.tabs button[aria-pressed="true"]{color:var(--ink);box-shadow:inset 0 -2px 0 var(--accent)}
+.card{background:var(--surface);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:16px}
+.card h3{font:500 12px var(--sans);color:var(--ink-3);text-transform:lowercase;letter-spacing:.05em;margin-bottom:10px}
+.note{font:12.5px/1.6 var(--sans);color:var(--ink-2);margin:10px 0 0;max-width:70ch}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.ax{fill:var(--ink-3);font:10.5px var(--mono)}.lb{fill:var(--ink);font:12px var(--sans)}.lb2{fill:var(--ink-2);font:11.5px var(--sans)}
+.clip{display:grid;grid-template-columns:30px minmax(0,1fr);gap:12px;align-items:start;padding:12px 0;border-top:1px solid var(--rule)}
+.clip:first-of-type{border-top:0}
+.play{width:30px;height:30px;display:grid;place-items:center;background:var(--ink);color:var(--paper);font:11px var(--sans)}
+.clip .t{font:14px/1.4 var(--serif)}
+.clip .m{font:11px var(--mono);color:var(--ink-3);margin:2px 0 6px}
+.frames{display:flex;height:22px;gap:1px}
+.frames i{flex:1;min-width:1px}
+.frames i.now{outline:2px solid var(--ink);outline-offset:-1px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font:12px var(--sans);color:var(--ink-2);margin-bottom:8px}
+.key{display:inline-flex;align-items:center;gap:6px}.sw{width:14px;height:2px;display:inline-block}
+.prose{max-width:720px;padding:32px 24px 80px;margin:0 auto;font:300 17px/1.7 var(--serif)}
+.prose h2{font:400 22px/1.3 var(--serif);margin:36px 0 12px}
+.prose p{margin:0 0 1.2em}.prose li{margin:.3em 0}
+.mapwrap{max-width:1180px;margin:0 auto;padding:28px 24px 80px}
+.mapwrap .lede{font:300 16px/1.6 var(--serif);color:var(--ink-2);max-width:70ch;margin:0 0 20px}
+.tip{position:fixed;pointer-events:none;z-index:60;max-width:300px;padding:7px 9px;background:var(--ink);color:var(--paper);font:11.5px/1.45 var(--sans)}
+.empty{color:var(--ink-3);padding:40px 0}
+@media (max-width:900px){
+  .atlas{grid-template-columns:1fr}
+  .side{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--rule-strong)}
+  .list{max-height:340px}
+  .detail{padding:20px 16px 48px}
+  .grid2{grid-template-columns:1fr}
+  .top{padding:14px 16px}
+}
+</style></head><body>
+<div class="top">
+  <div class="brand">moshi neuron atlas <span>/ tone</span></div>
+  <div class="views" role="tablist">
+    <button data-view="neurons" aria-pressed="true">neurons</button>
+    <button data-view="map" aria-pressed="false">map</button>
+    <button data-view="about" aria-pressed="false">about</button>
+  </div>
+  <div class="spacer"></div>
+  <span class="count" id="headcount"></span>
+  <button class="mode" id="mode" type="button" aria-label="switch light or dark mode"><svg class="to-dark" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/></svg><svg class="to-light" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+</div>
+
+<section class="view on" id="view-neurons"><div class="atlas">
+  <aside class="side">
+    <div class="filters">
+      <div class="chips" id="echips"></div>
+      <div class="row2">
+        <select id="band" aria-label="layers"><option value="all">all layers</option><option value="early">early 0–10</option><option value="middle">middle 11–21</option><option value="late">late 22–31</option></select>
+        <select id="dir" aria-label="direction"><option value="all">rises and falls</option><option value="1">rises</option><option value="-1">falls</option></select>
+        <select id="sort" aria-label="sort"><option value="strength">strongest</option><option value="layer">by layer</option></select>
+      </div>
+      <div class="row2"><input id="search" placeholder="search L14/N5321 or a word" aria-label="search"><span class="count" id="count"></span></div>
+    </div>
+    <div class="list" id="list"></div>
+  </aside>
+  <main class="detail" id="detail"></main>
+</div></section>
+
+<section class="view" id="view-map"><div class="mapwrap" id="map"></div></section>
+
+<section class="view" id="view-about"><div class="prose" id="about"></div></section>
+
+<div class="tip" id="tip" hidden></div>
+<script>
+const D=__DATA__;
+const E=D.emotions,V=D.voices,css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const tip=document.getElementById('tip');
+const showTip=(e,h)=>{tip.hidden=false;tip.innerHTML=h;tip.style.left=Math.min(e.clientX+14,innerWidth-tip.offsetWidth-8)+'px';tip.style.top=(e.clientY+16)+'px'};
+const hideTip=()=>{tip.hidden=true};
+const ecol=e=>e==='sad'?css('--sad'):e==='happy'?css('--happy'):css('--ink');
+const poleId=p=>`L${p.layer}/N${p.neuron}`;
+const poleKey=p=>`L${p.layer}_N${p.neuron}_${p.sign>0?'pos':'neg'}_${p.emotion}`;
+const band=l=>l<=10?'early':l<=21?'middle':'late';
+const VOICE_LABEL={ryan:'Ryan (Qwen, male)',serena:'Serena (Qwen, female)',designed_woman:'designed woman',designed_man:'designed man'};
+let state={emotion:'all',band:'all',dir:'all',sort:'strength',q:'',key:null,tab:'overview'};
+const params=new URLSearchParams(location.search);
+for(const k of ['emotion','band','dir','sort','tab'])if(params.get(k))state[k]=params.get(k);
+if(params.get('n'))state.key=params.get('n');
+
+function syncUrl(){const p=new URLSearchParams();if(state.key)p.set('n',state.key);p.set('tab',state.tab);if(state.emotion!=='all')p.set('emotion',state.emotion);if(state.band!=='all')p.set('band',state.band);history.replaceState(null,'','?'+p)}
+
+function chips(){const box=document.getElementById('echips');box.innerHTML=['all','sad vs happy',...E].map(e=>`<button class="chip ${e==='sad'?'sad':e==='happy'?'happy':''}" data-e="${e}" aria-pressed="${state.emotion===e}">${e}</button>`).join('');
+  box.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{state.emotion=c.dataset.e;chips();renderList()})}
+
+function filtered(){
+  let ps=D.poles.filter(p=>(state.emotion==='all'||(state.emotion==='sad vs happy'?(p.emotion==='sad'||p.emotion==='happy'):p.emotion===state.emotion))&&(state.band==='all'||band(p.layer)===state.band)&&(state.dir==='all'||p.sign===+state.dir));
+  const q=state.q.trim().toLowerCase();if(q)ps=ps.filter(p=>poleId(p).toLowerCase().includes(q.replace(/\s/g,''))||p.description.toLowerCase().includes(q));
+  return ps.sort(state.sort==='layer'?(a,b)=>a.layer-b.layer||b.strength-a.strength:(a,b)=>b.strength-a.strength);
+}
+function renderList(){
+  const ps=filtered();document.getElementById('count').textContent=`${ps.length} of ${D.poles.length} poles`;
+  document.getElementById('list').innerHTML=ps.map(p=>`<button class="item" data-k="${poleKey(p)}" aria-current="${state.key===poleKey(p)}"><span class="sign">${p.sign>0?'+':'−'}</span><span><span class="id">${p.sign>0?'rises':'falls'} · ${poleId(p)}<span class="tag ${p.emotion==='sad'?'sad':p.emotion==='happy'?'happy':''}">${p.emotion} ${p.strength.toFixed(1)}</span></span><div class="desc">${p.description}</div></span></button>`).join('')||'<p class="empty" style="padding:16px">No poles match.</p>';
+  document.querySelectorAll('.item').forEach(b=>b.onclick=()=>{state.key=b.dataset.k;state.tab=state.tab||'overview';renderList();renderDetail()});
+  if(!state.key&&ps.length){state.key=poleKey(ps[0]);renderList();renderDetail()}
+  syncUrl();
+}
+
+function profileChart(p){
+  const W=640,row=24,l=110,r=40,H=E.length*row+30;const vals=p.profile;const m=Math.max(2,...vals.map(Math.abs))*1.05;
+  const X=v=>l+(W-l-r)*(v+m)/(2*m);let s='';
+  for(const t of [-2,-1,0,1,2])if(Math.abs(t)<=m)s+=`<line x1="${X(t)}" x2="${X(t)}" y1="0" y2="${E.length*row}" stroke="${t===0?css('--ink-3'):css('--rule-strong')}" ${t&&Math.abs(t)===1?'stroke-dasharray="2 3"':''}/><text x="${X(t)}" y="${E.length*row+16}" class="ax" text-anchor="middle">${t>0?'+':''}${t}</text>`;
+  E.forEach((e,i)=>{const v=vals[i],y=i*row+5,x0=X(0),x1=X(v);const col=e===p.emotion?ecol(e):e==='sad'||e==='happy'?ecol(e):css('--bar');const op=e===p.emotion||e==='sad'||e==='happy'?1:.9;
+    s+=`<text x="${l-10}" y="${y+11}" class="${e===p.emotion?'lb':'lb2'}" text-anchor="end">${e}</text><rect x="${Math.min(x0,x1)}" y="${y}" width="${Math.max(1.5,Math.abs(x1-x0))}" height="14" fill="${col}" opacity="${op}"><title>${e}: ${v}</title></rect><text x="${v>=0?x1+6:x1-6}" y="${y+11}" class="ax" text-anchor="${v>=0?'start':'end'}">${v.toFixed(1)}</text>`});
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="emotion profile">${s}</svg>`;
+}
+function stripChart(p){
+  const W=640,row=22,l=110,r=12,H=E.length*row+30,a=p.activation;const lo=Math.min(...a),hi=Math.max(...a);const X=v=>l+(W-l-r)*(v-lo)/((hi-lo)||1);let s='';
+  for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4;s+=`<line x1="${X(v)}" x2="${X(v)}" y1="0" y2="${E.length*row}" stroke="${css('--rule')}"/><text x="${X(v)}" y="${E.length*row+16}" class="ax" text-anchor="middle">${v.toFixed(2)}</text>`}
+  E.forEach((e,i)=>{s+=`<text x="${l-10}" y="${i*row+15}" class="${e===p.emotion?'lb':'lb2'}" text-anchor="end">${e}</text>`});
+  a.forEach((v,c)=>{const e=D.clips[c].emotion,i=E.indexOf(e);const hl=e===p.emotion||e==='sad'||e==='happy';
+    s+=`<circle data-c="${c}" cx="${X(v)}" cy="${i*row+11+((c*37)%7-3)}" r="${hl?3.6:2.8}" fill="${hl?ecol(e):css('--bar')}" opacity="${hl?.9:.7}" style="cursor:pointer"/>`});
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="every clip" class="strip">${s}</svg>`;
+}
+function voicesChart(p){
+  const W=640,row=26,l=150,r=20,H=V.length*row+34;const all=p.per_voice.flat();const m=Math.max(2,...all.map(Math.abs))*1.05;const X=v=>l+(W-l-r)*(v+m)/(2*m);
+  const e0=E.indexOf(p.emotion);let s='';
+  for(const t of [-2,-1,0,1,2])if(Math.abs(t)<=m)s+=`<line x1="${X(t)}" x2="${X(t)}" y1="0" y2="${V.length*row}" stroke="${t===0?css('--ink-3'):css('--rule')}"/><text x="${X(t)}" y="${V.length*row+16}" class="ax" text-anchor="middle">${t}</text>`;
+  V.forEach((v,i)=>{const y=i*row+12;s+=`<text x="${l-10}" y="${y+4}" class="lb2" text-anchor="end">${VOICE_LABEL[v]||v}</text>`;
+    p.per_voice[i].forEach((d,j)=>{const e=E[j],main=j===e0;s+=`<circle cx="${X(d)}" cy="${y}" r="${main?6:3}" fill="${main?ecol(e):e==='sad'||e==='happy'?ecol(e):css('--bar')}" stroke="${main?css('--surface'):'none'}" stroke-width="2"><title>${v} · ${e}: ${d}</title></circle>`})});
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="per voice">${s}</svg>`;
+}
+function divColor(t){const a=css('--mid'),b=t>0?css('--sad'):css('--happy');return mixc(a,b,Math.min(1,Math.abs(t)))}
+function hex(c){const m=c.match(/^#([0-9a-f]{6})$/i);return m?[0,2,4].map(i=>parseInt(m[1].slice(i,i+2),16)):(c.match(/[\d.]+/g)||[128,128,128]).slice(0,3).map(Number)}
+function mixc(a,b,t){const x=hex(a),y=hex(b);return`rgb(${x.map((v,i)=>Math.round(v*(1-t)+y[i]*t))})`}
+let audio=null,playing=null;
+function clipsTab(p){
+  const vals=p.traces.flatMap(t=>t.values),m=vals.length?Math.max(...vals.map(Math.abs)):1;
+  return `<div class="card"><h3>clips that push this neuron furthest ${p.sign>0?'up':'down'}</h3><div class="legend"><span class="key"><span class="sw" style="background:${css('--sad')};height:8px;width:8px"></span>neuron above zero</span><span class="key"><span class="sw" style="background:${css('--happy')};height:8px;width:8px"></span>below zero</span><span class="key">each cell is 80 ms; the outlined cells are when the voice is speaking</span></div>`+
+  p.traces.map((t,k)=>{const c=D.clips[t.clip];return`<div class="clip"><button class="play" data-k="${k}" data-c="${t.clip}" aria-label="play">▶</button><div><div class="t">“${c.text}”</div><div class="m">${c.emotion} · ${VOICE_LABEL[c.voice]||c.voice} · mean ${p.activation[t.clip].toFixed(2)}</div><div class="frames" data-k="${k}">${t.values.map((v,f)=>`<i style="background:${divColor(v/m)};${f>=t.speech[0]&&f<t.speech[1]?'':'opacity:.35'}" title="${(f*D.frame_s).toFixed(2)} s: ${v}"></i>`).join('')}</div></div></div>`}).join('')+`</div>`;
+}
+function bindClips(p){
+  document.querySelectorAll('.play').forEach(b=>b.onclick=()=>{const k=+b.dataset.k,c=+b.dataset.c;if(audio){audio.pause();document.querySelectorAll('.play').forEach(x=>x.textContent='▶');document.querySelectorAll('.frames i.now').forEach(x=>x.classList.remove('now'))}
+    const same=playing===c;audio=null;playing=null;if(same)return;audio=new Audio(`audio/${c}.wav`);playing=c;b.textContent='■';audio.play();
+    const cells=document.querySelector(`.frames[data-k="${k}"]`).children;const step=()=>{if(!audio||audio.paused)return;const f=Math.round((D.lead_s+audio.currentTime)/D.frame_s);[...cells].forEach((x,i)=>x.classList.toggle('now',i===f));requestAnimationFrame(step)};step();
+    audio.onended=()=>{b.textContent='▶';[...cells].forEach(x=>x.classList.remove('now'));audio=null;playing=null}});
+}
+function renderDetail(){
+  const el=document.getElementById('detail');const p=D.poles.find(x=>poleKey(x)===state.key);
+  if(!p){el.innerHTML='<p class="empty">Pick a neuron on the left.</p>';return}
+  const top=E.map((e,i)=>[e,p.profile[i]]).filter(([,v])=>p.sign*v>=.5).sort((a,b)=>p.sign*(b[1]-a[1]));
+  el.innerHTML=`<div class="dhead"><div class="kind"><b>${p.sign>0?'rises':'falls'}</b> · ${band(p.layer)} layers</div><h1>${p.description}</h1><div class="meta">layer ${p.layer} / neuron ${p.neuron} · strongest for ${p.emotion}, d ${p.sign>0?'+':'−'}${p.strength.toFixed(2)} in every voice</div></div>
+  <div class="tabs">${['overview','voices','clips'].map(t=>`<button data-t="${t}" aria-pressed="${state.tab===t}">${t}</button>`).join('')}</div><div id="tabbody"></div>`;
+  el.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{state.tab=b.dataset.t;renderDetail();syncUrl()});
+  const body=document.getElementById('tabbody');
+  if(state.tab==='overview'){
+    body.innerHTML=`<div class="card"><h3>how much it moves for each emotion</h3>${profileChart(p)}<p class="note">Effect size (Cohen's d) for each emotion against all the others, worked out separately in each of the four voices. The bar shows the weakest of the four, and it is zero unless all four agree on the direction. So a bar at +1 means this neuron moves at least one full spread for that emotion in every voice.</p></div>
+    <div class="card"><h3>every clip</h3>${stripChart(p)}<p class="note">Each dot is one clip (10 sentences × 4 voices per emotion), placed by the neuron's average value while the voice is speaking. Click a dot to hear it.</p></div>`;
+    body.querySelectorAll('.strip circle').forEach(c=>{c.onpointermove=e=>{const k=+c.dataset.c,x=D.clips[k];showTip(e,`<b>${x.emotion}</b> · ${VOICE_LABEL[x.voice]||x.voice}<br>“${x.text}”<br>value ${p.activation[k].toFixed(2)}`)};c.onpointerleave=hideTip;c.onclick=()=>{if(audio)audio.pause();audio=new Audio(`audio/${c.dataset.c}.wav`);audio.play()}});
+  }else if(state.tab==='voices'){
+    body.innerHTML=`<div class="card"><h3>does every voice agree?</h3>${voicesChart(p)}<p class="note">One row per voice. The big dot is ${p.emotion}; small dots are the other emotions (sad and happy keep their colours). If the big dot sits on the same side of zero in every row, the neuron is reacting to the emotion, not to one voice's quirks.</p></div>`;
+  }else{body.innerHTML=clipsTab(p);bindClips(p)}
+}
+
+function probeChart(){
+  const W=1100,H=280,l=46,r=16,t=12,b=28,pw=W-l-r,ph=H-t-b,n=D.probe.by_voice.length,X=i=>l+pw*i/(n-1),Y=v=>t+ph*(1-v);
+  const series=[['voice never seen',D.probe.by_voice,css('--accent')],['sentence never seen',D.probe.by_sentence,css('--happy')],['1.2 s after, voice never seen',D.probe.after_by_voice,css('--ink-2')],['shuffled labels',D.probe.floor,css('--ink-3'),1]];
+  let s='';for(let k=0;k<=4;k++){const v=k/4;s+=`<line x1="${l}" x2="${W-r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css('--rule-strong')}"/><text x="${l-8}" y="${Y(v)+4}" class="ax" text-anchor="end">${Math.round(v*100)}%</text>`}
+  s+=`<line x1="${l}" x2="${W-r}" y1="${Y(D.chance)}" y2="${Y(D.chance)}" stroke="${css('--ink-3')}" stroke-dasharray="2 4"/><text x="${W-r}" y="${Y(D.chance)-6}" class="ax" text-anchor="end">guessing ${Math.round(D.chance*100)}%</text>`;
+  for(let i=0;i<n;i++)if(i%4===0||i===n-1)s+=`<text x="${X(i)}" y="${H-8}" class="ax" text-anchor="middle">${i===0?'in':i-1}</text>`;
+  series.forEach(([nm,v,c,d])=>{s+=`<polyline points="${v.map((y,i)=>`${X(i)},${Y(y)}`).join(' ')}" fill="none" stroke="${c}" stroke-width="2" ${d?'stroke-dasharray="5 4"':''}/>`});
+  return `<div class="legend">${series.map(([nm,,c,d])=>`<span class="key"><span class="sw" style="${d?`border-top:2px dashed ${c};height:0`:`background:${c}`}"></span>${nm}</span>`).join('')}</div><svg viewBox="0 0 ${W} ${H}" id="probesvg">${s}<line class="cross" opacity="0" y1="${t}" y2="${t+ph}" stroke="${css('--ink-3')}"/><rect class="hit" x="${l}" y="${t}" width="${pw}" height="${ph}" fill="transparent"/></svg>`;
+}
+function heatmap(){
+  const W=1100,cw=(W-110)/D.layers,row=22,H=E.length*row+30;let s='';const mx=Math.max(...D.counts.flat(),1);
+  E.forEach((e,i)=>{s+=`<text x="100" y="${i*row+15}" class="${e==='sad'||e==='happy'?'lb':'lb2'}" text-anchor="end" fill="${e==='sad'||e==='happy'?ecol(e):''}">${e}</text>`;
+    for(let l=0;l<D.layers;l++){const c=D.counts[l][i],t=Math.sqrt(c/mx);const base=e==='sad'?css('--sad'):e==='happy'?css('--happy'):css('--ink');
+      s+=`<rect x="${110+l*cw}" y="${i*row}" width="${cw-1}" height="${row-2}" fill="${mixc(css('--mid'),base,t)}" data-l="${l}" data-e="${i}"/>`}});
+  for(let l=0;l<D.layers;l+=4)s+=`<text x="${110+l*cw+cw/2}" y="${E.length*row+16}" class="ax" text-anchor="middle">${l}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" id="heat">${s}</svg>`;
+}
+function confusion(){
+  const n=E.length,c=26,l=100,t=90,W=l+n*c+10,H=t+n*c+10;let s='';const tot=D.confusion.map(r=>r.reduce((a,b)=>a+b,0));
+  E.forEach((e,j)=>s+=`<text transform="translate(${l+j*c+c/2+4},${t-8}) rotate(-55)" class="lb2">${e}</text>`);
+  E.forEach((e,i)=>{s+=`<text x="${l-8}" y="${t+i*c+c/2+4}" class="lb2" text-anchor="end">${e}</text>`;D.confusion[i].forEach((v,j)=>{const f=v/(tot[i]||1);s+=`<rect x="${l+j*c}" y="${t+i*c}" width="${c-1}" height="${c-1}" fill="${mixc(css('--mid'),i===j?css('--accent'):css('--ink'),f)}"><title>${e} heard as ${E[j]}: ${v} of ${tot[i]}</title></rect>`;if(v)s+=`<text x="${l+j*c+c/2}" y="${t+i*c+c/2+4}" class="ax" text-anchor="middle" fill="${f>.5?css('--paper'):css('--ink-2')}">${v}</text>`})});
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="confusion matrix">${s}</svg>`;
+}
+function emotionMap(){
+  const vals=D.centroid_xy.map(p=>p[1]*(D.acoustics.correlation_with_axis.pitch_hz<0?-1:1)),W=560,H=230,l=24,r=24,lo=Math.min(...vals),hi=Math.max(...vals),pad=(hi-lo)*.06,X=v=>l+(W-l-r)*(v-lo+pad)/(hi-lo+2*pad),y=112;
+  let s=`<line x1="${l}" x2="${W-r}" y1="${y}" y2="${y}" stroke="${css('--rule-strong')}"/><text x="${l}" y="${H-4}" class="ax">lower, flatter pitch</text><text x="${W-r}" y="${H-4}" class="ax" text-anchor="end">higher, livelier pitch</text>`;
+  E.map((e,i)=>[e,vals[i]]).sort((a,b)=>a[1]-b[1]).forEach(([e,v],k)=>{const x=X(v),up=k%2===0,ly=up?y-16-(k%4===0?24:0):y+26+(k%4===1?24:0),a=D.acoustics.by_emotion[e];
+    s+=`<line x1="${x}" x2="${x}" y1="${y}" y2="${ly+(up?4:-12)}" stroke="${css('--rule-strong')}"/><circle cx="${x}" cy="${y}" r="5.5" fill="${ecol(e)}" stroke="${css('--surface')}" stroke-width="2"><title>${e}: ${Math.round(a.pitch_hz)} Hz, pitch movement ${a.pitch_movement.toFixed(1)} st, ${a.words_per_s.toFixed(1)} words/s</title></circle><text x="${x}" y="${ly}" class="lb" text-anchor="middle" fill="${ecol(e)}">${e}</text>`});
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="emotions along the main axis">${s}</svg>`;
+}
+function renderMap(){
+  const b=D.best_layer,pv=D.probe.by_voice[b];
+  const totals=E.map((e,i)=>[e,D.counts.reduce((a,r)=>a+r[i],0),D.null_counts.reduce((a,r)=>a+r[i],0)]);
+  document.getElementById('map').innerHTML=`<p class="lede">Twelve emotions, four voices, ten sentences, every sentence said every way. These are the whole-model views; the neurons tab goes one unit at a time.</p>
+  <div class="card"><h3>can moshi tell all twelve apart?</h3>${probeChart()}<p class="note">A simple classifier reads each layer and names the emotion of a clip from a voice it was never trained on (or a sentence it never saw). Best: ${b===0?'the input':'layer '+(b-1)}, ${Math.round(pv*100)}% against ${Math.round(D.chance*100)}% for guessing.</p></div>
+  <div class="grid2"><div class="card"><h3>what gets mixed up (best layer, unseen voice)</h3>${confusion()}</div><div class="card"><h3>where the emotions sit</h3>${emotionMap()}<p class="note">Each emotion's average at the best layer along the direction that separates them most once amused (which has real laughter in it) is set aside. It tracks average pitch (correlation ${Math.abs(D.acoustics.correlation_with_axis.pitch_hz).toFixed(2)}) and pitch movement (${Math.abs(D.acoustics.correlation_with_axis.pitch_movement).toFixed(2)}), not loudness (${Math.abs(D.acoustics.correlation_with_axis.level_db).toFixed(2)}).</p></div></div>
+  <div class="card"><h3>neurons that move strongly for each emotion, in every voice, by layer</h3>${heatmap()}<p class="note">Count of MLP neurons per layer (11,264 each) whose effect size is at least ${D.strong} in all four voices, same direction. With emotion labels shuffled, the same rule finds ${totals.reduce((a,t)=>a+t[2],0).toFixed(0)} across the whole model, against ${totals.reduce((a,t)=>a+t[1],0)} for the real labels. Hover a cell for numbers.</p></div>`;
+  document.querySelectorAll('#heat rect').forEach(r=>{r.onpointermove=e=>{const l=+r.dataset.l,i=+r.dataset.e;showTip(e,`<b>layer ${l} · ${E[i]}</b><br>${D.counts[l][i]} strong neurons<br>shuffled labels: ${D.null_counts[l][i]}`)};r.onpointerleave=hideTip});
+  const svg=document.getElementById('probesvg'),hit=svg.querySelector('.hit'),cross=svg.querySelector('.cross'),n=D.probe.by_voice.length;
+  hit.onpointermove=e=>{const rc=svg.getBoundingClientRect(),x=(e.clientX-rc.left)*1100/rc.width,i=Math.max(0,Math.min(n-1,Math.round((x-46)/(1100-62)*(n-1)))),px=46+(1100-62)*i/(n-1);cross.setAttribute('x1',px);cross.setAttribute('x2',px);cross.setAttribute('opacity',1);
+    showTip(e,`<b>${i===0?'input':'layer '+(i-1)}</b><br>unseen voice ${Math.round(D.probe.by_voice[i]*100)}%<br>unseen sentence ${Math.round(D.probe.by_sentence[i]*100)}%<br>after they stop ${Math.round(D.probe.after_by_voice[i]*100)}%<br>shuffled ${Math.round(D.probe.floor[i]*100)}%`)};
+  hit.onpointerleave=()=>{hideTip();cross.setAttribute('opacity',0)};
+}
+function renderAbout(){
+  document.getElementById('about').innerHTML=`<h2>what this is</h2><p>An atlas of the MLP neurons inside Moshi's 32-layer temporal transformer that react to the emotion in a voice. Each layer has 11,264 neurons, so 360,448 in all. Every clip was played into Moshi on its own while Moshi was held silent, and each neuron's value was averaged over the time the voice was speaking.</p>
+  <h2>the clips</h2><p>${E.length} emotions (${E.join(', ')}), 10 sentences whose words fit any mood, and 4 voices: two fixed Qwen3-TTS voices (Ryan, Serena) and two voices designed from a text description. Every sentence was rendered twice per emotion and voice, and the better take was kept: by an emotion classifier where it has a matching label, and by loudness, pitch movement and pace for the rest. ${D.clips.length} clips in total.</p>
+  <h2>what a pole means here</h2><p>Goodfire's atlas uses "pole" for the positive or negative extreme of a neuron's value. Here it means the direction a neuron moves for an emotion: <b>rises</b> or <b>falls</b>, compared with all the other emotions. A neuron is listed only if it moves the same way in all four voices, and its strength is the weakest of the four effect sizes.</p>
+  <h2>caveats</h2><ul><li>All speech is synthetic, from one family of TTS models. Bored, sarcastic, amused, tender and contemptuous have no classifier check, so they're only as good as the renders. Listen before trusting a neuron.</li><li>Values are averaged over each clip, so a neuron that fires for a moment (a laugh, a sigh) gets diluted. The clips tab shows the frame by frame trace.</li><li>Moshi heard each sentence cold, with no conversation before it.</li><li>Descriptions are written from the numbers, not by a model reading examples, and they say nothing about what the neuron does downstream.</li></ul>`;
+}
+
+function views(){document.querySelectorAll('.views button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.views button').forEach(x=>x.setAttribute('aria-pressed',x===b));document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='view-'+b.dataset.view));if(b.dataset.view==='map')renderMap()})}
+['band','dir','sort'].forEach(id=>{const el=document.getElementById(id);el.value=state[id];el.onchange=()=>{state[id]=el.value;renderList()}});
+document.getElementById('search').oninput=e=>{state.q=e.target.value;renderList()};
+document.getElementById('mode').onclick=()=>{const m=document.documentElement.dataset.mode==='dark'?'light':'dark';document.documentElement.dataset.mode=m;try{localStorage.setItem('mode',m)}catch(e){}renderList();renderDetail();if(document.getElementById('view-map').classList.contains('on'))renderMap()};
+document.getElementById('headcount').textContent=`${D.poles.length} poles · ${D.clips.length} clips · ${D.voices.length} voices`;
+chips();views();renderAbout();renderList();renderDetail();
+</script></body></html>

@@ -202,12 +202,16 @@ to one of the fallbacks in section 8.
 To talk to Moshi yourself (stage 0), with headphones on:
 
 ```bash
-uv venv --python 3.12 .venv-moshi
-uv pip install --python .venv-moshi/bin/python moshi_mlx
-.venv-moshi/bin/python -m moshi_mlx.local_web -q 8    # opens a page at http://localhost:8998
+scripts/moshi-local  # opens http://localhost:8998
 ```
 
-The first start downloads about 8.5 GB.
+The launcher creates the repository-local Python environment if needed and uses cached weights
+by default. On a new machine, run `HF_HUB_OFFLINE=0 scripts/moshi-local` to download
+the weights (about 8.5 GB) and web assets. The missing `config.json` warning is expected
+for these weights; Kyutai falls back to its built-in Moshi configuration.
+
+For recorded audio: `HF_HUB_OFFLINE=1 .venv-moshi/bin/python docs/duplex/moshi_offline.py IN.wav OUT.wav`.
+Supply silence after the recorded speech to leave time for a response.
 
 ## 8. Risks, most likely first
 

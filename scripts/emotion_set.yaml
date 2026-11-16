@@ -1,0 +1,67 @@
+sentences:
+  - They moved the meeting to Friday.
+  - So that's what you decided.
+  - I just read your message.
+  - She's coming over tonight.
+  - We're doing this again next week.
+  - He said he'd call me back.
+  - The results came in this morning.
+  - You cooked dinner for everyone.
+  - It's going to rain all weekend.
+  - That's the third time this month.
+
+emotions:
+  neutral:
+    direction: a plain, neutral, matter-of-fact tone, the same calm level from the first word to the last
+    classifier: neutral
+  happy:
+    direction: bright, warm happiness and excitement, smiling through every word of the sentence
+    classifier: happy
+  sad:
+    direction: deep sadness, heavy and quiet, the voice close to breaking on every word
+    classifier: sad
+  angry:
+    direction: real anger, loud, hard and clipped, furious on every word
+    classifier: angry
+  anxious:
+    direction: anxiety and nerves, fast, shaky and breathy, tense and worried the whole way through
+    classifier: fearful
+  surprised:
+    direction: genuine astonishment, pitch jumping up, as if you cannot believe it, for the whole sentence
+    classifier: surprised
+  disgusted:
+    direction: deep disgust and revulsion, recoiling as if something is gross, a grimacing ugh quality on every word
+    classifier: disgusted
+  bored:
+    direction: utter boredom and no interest, a flat slow monotone with low energy, trailing off, a sigh in the voice throughout
+    acoustic: low_energy
+  sarcastic:
+    direction: heavy sarcasm, a dry mocking drawl that stretches the key words and clearly means the opposite, for the whole sentence
+    acoustic: marked
+  amused:
+    direction: amusement, holding back laughter, a chuckle running through the whole sentence
+    acoustic: marked
+  tender:
+    direction: tenderness, soft, warm and caring, gentle and close, as if comforting someone you love, for the whole sentence
+    acoustic: marked
+  contemptuous:
+    direction: cold contempt and superiority, sneering and dismissive, looking down on the listener throughout
+    acoustic: marked
+
+voices:
+  ryan:
+    model: mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit
+    speaker: ryan
+    sex: male
+  serena:
+    model: mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit
+    speaker: serena
+    sex: female
+  designed_woman:
+    model: mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit
+    description: A woman in her thirties with a natural American accent
+    sex: female
+  designed_man:
+    model: mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit
+    description: A man in his forties with a deep, natural American voice
+    sex: male

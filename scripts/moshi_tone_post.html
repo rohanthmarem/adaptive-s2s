@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Does Moshi Hear Tone</title>
+<meta name="description" content="I played Moshi the same sentences in a sad, excited and plain voice and recorded every layer while it listened.">
+<script>
+(function(){var m=null;try{m=localStorage.getItem('mode')}catch(e){}if(!m)m=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.mode=m;document.documentElement.classList.add('js')})();
+</script>
+<style>
+__FONTS__
+:root{
+  color-scheme:light;
+  --paper:#f4f0e6;--paper-2:#eae5d8;--surface:#fbf8f1;--ink:#11141c;--ink-2:rgb(17 20 28 / .64);--ink-3:rgb(17 20 28 / .5);
+  --rule:rgb(17 24 48 / .075);--rule-strong:rgb(17 24 48 / .15);--accent:#2200ff;--accent-ink:#fff;--hl:oklch(.9 .11 95);
+  --sad:#2200ff;--excited:#e0571f;--happy:#e0571f;--plain:#13976a;--flat:#7a7870;--hesitant:#9a3fb5;--frustrated:#c9302c;--mid:#e3ded1;
+  --pixel:"Geist Pixel",Menlo,ui-monospace,monospace;--serif:"Merriweather",Georgia,serif;
+  --mono:Menlo,ui-monospace,SFMono-Regular,Monaco,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Roboto,sans-serif;
+  --ease-out:cubic-bezier(.25,.46,.45,.94);--ease-out-strong:cubic-bezier(.23,1,.32,1);--dur-fast:160ms;--dur:240ms;
+  --shadow-border:0 0 0 1px rgb(0 0 0 / .06),0 1px 2px -1px rgb(0 0 0 / .06),0 2px 4px 0 rgb(0 0 0 / .04);
+  --frame-max:1360px;--side-w:220px;--gut-w:72px;--main-w:640px;--page-pad:clamp(20px,4vw,64px);
+  --title:400 clamp(24px,2.2vw,30px)/1.3 var(--serif);
+}
+:root[data-mode="dark"]{
+  color-scheme:dark;
+  --paper:#0c0c0e;--paper-2:#1a1a1d;--surface:#131316;--ink:#ecebe6;--ink-2:rgb(236 235 230 / .66);--ink-3:rgb(236 235 230 / .48);
+  --rule:rgb(255 255 255 / .09);--rule-strong:rgb(255 255 255 / .18);--accent:#8c84ff;--accent-ink:#0c0c0e;--hl:oklch(.42 .08 90);
+  --sad:#8c84ff;--excited:#f07a43;--happy:#f07a43;--plain:#2fbf8a;--flat:#a3a29b;--hesitant:#c77ddb;--frustrated:#ef6461;--mid:#26262b;
+  --shadow-border:0 0 0 1px rgb(255 255 255 / .08),0 1px 2px -1px rgb(0 0 0 / .4),0 2px 4px 0 rgb(0 0 0 / .3);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scrollbar-gutter:stable}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.65 var(--serif);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:clip}
+img,svg,canvas{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+h1,h2,h3{text-wrap:balance;margin:0;font-weight:400}
+p,li,figcaption{text-wrap:pretty}
+::selection{background:var(--accent);color:var(--accent-ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.num{font-variant-numeric:tabular-nums}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.progress{position:fixed;inset:0 0 auto;height:2px;z-index:50;pointer-events:none}
+.progress i{display:block;height:100%;background:var(--accent);transform:scaleX(0);transform-origin:left}
+
+.frame{position:relative;display:grid;grid-template-columns:var(--side-w) minmax(0,1fr);max-width:var(--frame-max);margin:0 auto;padding:0 var(--page-pad)}
+.content{position:relative;z-index:1;display:grid;grid-template-columns:[gutter-start] var(--gut-w) [main-start] minmax(0,var(--main-w)) [main-end] minmax(0,1fr) [end];align-content:start;padding:140px 0 120px}
+.content>*{grid-column:main;min-width:0}
+
+.side{position:relative;z-index:1}
+.side-inner{position:sticky;top:40px;margin-top:140px;display:flex;flex-direction:column;align-items:flex-start;gap:22px;padding:0 24px 0 0;}
+.side-nav ul{list-style:none;margin:0;padding:0}
+.side-nav a{position:relative;display:block;padding:3px 0;font:15px/1.45 var(--sans);color:var(--ink);transition:color var(--dur-fast) var(--ease-out)}
+.side-nav a:hover{color:var(--accent)}
+.side-nav a[aria-current="page"]{color:var(--accent)}
+.side-nav a[aria-current="page"]::before{content:"";position:absolute;left:-11px;top:50%;width:2px;height:14px;transform:translateY(-50%);background:var(--accent)}
+.mode-toggle{display:inline-grid;place-items:center;width:32px;height:32px;margin:-12px 0 0 -7px;color:var(--ink-3);transition:color var(--dur-fast) var(--ease-out)}
+.mode-toggle:hover{color:var(--accent)}
+.mode-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.mode-toggle .to-light,[data-mode="dark"] .mode-toggle .to-dark{display:none}
+[data-mode="dark"] .mode-toggle .to-light{display:revert}
+.post-sidebar{width:100%;margin-top:18px;font:13px/1.5 var(--sans);color:var(--ink-2)}
+.toc-label{margin-bottom:12px;font:500 11px/1 var(--sans);color:var(--ink-3);text-transform:lowercase;letter-spacing:.06em}
+.toc-list{list-style:none;margin:0;padding:0;border-left:1px solid var(--rule-strong)}
+.toc-list a{display:block;padding:7px 4px 7px 12px;border-left:2px solid transparent;margin-left:-1px;text-transform:lowercase;transition:color var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out)}
+.toc-list a:hover,.toc-list a.is-active{color:var(--ink)}
+.toc-list a.is-active{border-left-color:var(--accent)}
+.stats{display:grid;gap:4px;margin-top:24px;padding-top:14px;border-top:1px solid var(--rule);font-size:11px;color:var(--ink-3)}
+.stats span{display:flex;justify-content:space-between;gap:8px}
+.stats b{font-weight:500;color:var(--ink-2);text-align:right}
+
+.mast{padding:0 0 34px;border-bottom:1px solid var(--rule-strong)}
+.eyebrow{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;margin-bottom:22px;font:500 12px/1.5 var(--sans);color:var(--ink-3);text-transform:lowercase;letter-spacing:.06em}
+.eyebrow b{color:var(--accent);font-weight:500}
+.mast h1{font:var(--title);letter-spacing:-.01em}
+.deck{max-width:40ch;margin:18px 0 0;color:var(--ink-2);font:300 clamp(17px,1.6vw,20px)/1.45 var(--serif)}
+.byline{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:24px;color:var(--ink-2);font:13px/1.35 var(--sans)}
+.byline .dot{color:var(--ink-3)}
+@keyframes enter{from{transform:translateY(8px);filter:blur(8px);opacity:0}}
+[data-enter]{animation:enter 800ms var(--ease-out) both;animation-delay:calc(100ms * var(--stagger,0))}
+
+.post-content{grid-column:main-start/end;padding-top:40px;container-type:inline-size}
+.toc-mobile{display:none}
+.prose{width:min(var(--main-w),100%);font:300 20px/1.72 var(--serif)}
+.prose p,.prose ul,.prose ol{margin:0 0 1.35em}
+.prose a{color:var(--accent);text-decoration:underline;text-decoration-color:color-mix(in oklab,var(--accent) 38%,transparent);text-underline-offset:.16em}
+.prose a:hover{text-decoration-color:var(--accent)}
+.prose ul{padding-left:1.3em}.prose li{padding-left:.2em;margin:.3em 0}.prose ul li::marker{color:var(--accent)}
+.prose h2{position:relative;margin:56px 0 18px;font:400 clamp(24px,2.3vw,28px)/1.3 var(--serif);letter-spacing:-.01em;text-transform:lowercase;scroll-margin-top:44px}
+.prose :not(pre)>code{padding:.12em .3em;background:var(--paper-2);font:.8em/1.3 var(--mono)}
+.prose blockquote{margin:32px 0;padding-left:20px;border-left:2px solid var(--accent);font:300 clamp(20px,2vw,24px)/1.45 var(--serif)}
+.prose blockquote p{margin:0}
+.prose hr{border:0;margin:44px 0;text-align:center}
+.prose hr::after{content:"· · ·";color:var(--ink-3);font:14px/1 var(--mono);letter-spacing:.4em}
+mark.hl{color:inherit;background:linear-gradient(transparent 55%,var(--hl) 55%,var(--hl) 92%,transparent 92%);padding:0 .12em;margin:0 -.12em}
+.prose strong{font-weight:500}
+
+.prose figure.fig{width:100cqw;margin:40px 0}
+.figbox{background:var(--surface);box-shadow:var(--shadow-border);padding:18px 18px 14px}
+.prose figure.fig figcaption{margin-top:10px;color:var(--ink-2);font:12px/1.55 var(--mono);max-width:var(--main-w)}
+.prose figure.fig figcaption b{color:var(--accent);font-weight:500}
+.ctl{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:0 0 12px;font:12px/1.4 var(--sans);color:var(--ink-2)}
+.ctl select,.ctl .btn{font:12px/1 var(--sans);color:var(--ink);background:var(--paper);box-shadow:inset 0 0 0 1px var(--rule-strong);border:0;padding:7px 10px;border-radius:0;cursor:pointer;max-width:100%}
+.ctl .btn[aria-pressed="true"]{box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent)}
+.ctl input[type=range]{flex:1;min-width:140px;accent-color:var(--accent)}
+.layer{font:500 12px var(--mono);min-width:96px;color:var(--ink)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 8px;font:12px/1.4 var(--sans);color:var(--ink-2)}
+.key{display:inline-flex;align-items:center;gap:6px}.sw{width:14px;height:2px;display:inline-block}.dotk{width:9px;height:9px;border-radius:50%;display:inline-block}
+.axis{fill:var(--ink-3);font:11px var(--mono)}.lbl{fill:var(--ink);font:12px var(--sans)}.lbl2{fill:var(--ink-3);font:11px var(--sans)}
+.figbox svg{width:100%;height:auto;overflow:visible}
+.stat{display:flex;gap:10px 24px;flex-wrap:wrap;margin-top:12px}
+.stat div{font:11px/1.3 var(--sans);color:var(--ink-3);text-transform:lowercase;letter-spacing:.04em}
+.stat b{display:block;margin-top:4px;font:400 20px/1.1 var(--pixel);color:var(--ink);letter-spacing:0;text-transform:none}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+canvas.grid{width:100%;height:auto;image-rendering:pixelated}
+.players{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.player{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--paper);box-shadow:inset 0 0 0 1px var(--rule-strong);font:12px var(--sans)}
+.player button{width:26px;height:26px;display:grid;place-items:center;background:var(--ink);color:var(--paper);font:11px var(--sans)}
+.player .len{margin-left:auto;color:var(--ink-3);font:11px var(--mono)}
+.spark{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.spark figure{margin:0;padding:6px 8px;background:var(--paper);box-shadow:inset 0 0 0 1px var(--rule)}
+.spark figcaption{margin:0 0 4px!important;font:10.5px/1.3 var(--mono)!important;color:var(--ink-3)!important}
+.bars .row{display:grid;grid-template-columns:200px minmax(0,1fr) 44px;gap:12px;align-items:center;margin:8px 0;font:12.5px/1.3 var(--sans);color:var(--ink-2)}
+.bars .track{height:12px;background:var(--mid);position:relative}
+.bars .fill{position:absolute;inset:0 auto 0 0;background:var(--accent)}
+.bars .row.dim .fill{background:var(--ink-3)}
+.bars .chance{position:absolute;top:-4px;bottom:-4px;border-left:1px dashed var(--ink)}
+.bars b{font:400 15px var(--pixel);color:var(--ink);text-align:right}
+.tip{position:fixed;pointer-events:none;z-index:60;max-width:280px;padding:7px 9px;background:var(--ink);color:var(--paper);font:11.5px/1.45 var(--sans)}
+
+.endmark{display:flex;align-items:center;gap:14px;width:min(var(--main-w),100%);margin:56px 0 0;color:var(--ink-3);font:12px/1.3 var(--mono)}
+.endmark::before,.endmark::after{content:"";flex:1;height:1px;background:var(--rule)}
+
+@media (min-width:1024px) and (max-width:1259px){.frame{--main-w:clamp(440px,calc(100vw - 584px),640px)}}
+@media (max-width:1023px){
+  .frame{grid-template-columns:minmax(0,1fr)}
+  .content{grid-template-columns:[gutter-start main-start] minmax(0,1fr) [main-end end];padding-top:24px}
+  .side-inner{position:static;margin-top:0;flex-direction:row;align-items:center;justify-content:space-between;padding:18px 0;max-height:none;overflow:visible}
+  .side-nav ul{display:flex;gap:16px}
+  .post-sidebar{display:none}
+  .mode-toggle{margin:0}
+  .prose figure.fig{width:100%}
+  .toc-mobile{display:block;margin-bottom:28px;color:var(--ink-2);font:14px/1.6 var(--sans)}
+  .toc-mobile summary{display:flex;gap:10px;align-items:center;min-height:40px;list-style:none;cursor:pointer;color:var(--ink-3);font:500 11px/1 var(--sans);text-transform:lowercase;letter-spacing:.06em}
+  .toc-mobile summary::-webkit-details-marker{display:none}
+  .toc-mobile summary::after{content:"+";color:var(--accent);font-size:14px}
+  .toc-mobile[open] summary::after{content:"−"}
+  .toc-mobile ol{list-style:none;margin:0;padding:0}.toc-mobile a{display:flex;align-items:center;min-height:36px;text-transform:lowercase}
+  .deck{max-width:none}
+}
+@media (max-width:640px){
+  .two{grid-template-columns:1fr}
+  .players{grid-template-columns:1fr}
+  .spark{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bars .row{grid-template-columns:120px minmax(0,1fr) 38px}
+  .figbox{padding:14px 12px 10px}
+}
+@media (max-width:480px){.prose{font-size:18px}.prose h2{font-size:23px}.byline .dot{display:none}.endmark{font-size:11px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:1ms!important;animation-delay:0ms!important;transition-duration:1ms!important}}
+</style></head>
+<body>
+<div class="progress" aria-hidden="true"><i></i></div>
+<div class="frame">
+  <aside class="side"><div class="side-inner">
+    <nav class="side-nav" aria-label="Primary"><ul>
+      <li><a href="https://rohanth.com/">home</a></li>
+      <li><a href="https://rohanth.com/projects">projects</a></li>
+      <li><a href="https://rohanth.com/writing" aria-current="page">writing</a></li>
+    </ul></nav>
+    <button type="button" class="mode-toggle" id="mode">
+      <svg class="to-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/></svg>
+      <svg class="to-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>
+      <span class="sr-only">switch light or dark mode</span>
+    </button>
+    <nav class="post-sidebar" aria-label="Post details">
+      <div class="toc-label">contents</div>
+      <ol class="toc-list" id="toc"></ol>
+      <div class="stats">
+        <span>words <b class="num" id="words"></b></span>
+        <span>read <b class="num" id="read"></b></span>
+        <span>posted <b class="num">11.15.26</b></span>
+        <span>tags <b>moshi, interpretability</b></span>
+      </div>
+    </nav>
+  </div></aside>
+
+  <main id="main" class="content">
+    <header class="mast">
+      <div class="eyebrow" data-enter style="--stagger:0"><b>writing</b><span>moshi · interpretability · voice</span></div>
+      <h1 data-enter style="--stagger:1">does moshi hear tone?</h1>
+      <p class="deck" data-enter style="--stagger:2">i played moshi the same sentences in a sad, excited and plain voice, and recorded every layer while it listened</p>
+      <div class="byline" data-enter style="--stagger:3"><span>By Rohanth Marem</span><span class="dot" aria-hidden="true">·</span><time class="num" datetime="2026-11-15">11.15.26</time><span class="dot" aria-hidden="true">·</span><span class="num" id="readline"></span></div>
+    </header>
+
+    <article class="post-content">
+      <details class="toc-mobile"><summary>contents</summary><ol id="toc-mobile"></ol></details>
+      <div class="prose" id="prose">
+
+<h2 id="the-question">the question</h2>
+<p>I'm building a voice model that changes how it talks based on how you sound. If you call it sounding wrecked, it should slow down and be gentle. If you call it buzzing about good news, it should match that energy. The first version I built was a cascade: speech to text, an LLM, then text to speech. It works, but it throws your voice away at the very first step, so the best it can do is guess your mood from your words.</p>
+<p>Moshi, from Kyutai, works differently. It's a full-duplex model, which means it listens and talks at the same time, and it never turns your voice into text first. Your audio goes straight in as tokens. So in theory it has everything it needs to notice that you sound sad. In practice, when I played it a sad and an excited version of the same line, it answered them pretty much the same way.</p>
+<p>Before spending money fine-tuning it, I wanted to know which of two things was going on. Either Moshi doesn't pick up tone at all, and I'd have to teach it to hear. Or it hears tone just fine and doesn't do anything with it. Those need very different fixes, so I opened it up and looked.</p>
+
+<h2 id="the-setup">the setup</h2>
+<p>The test needs sentences where the words give nothing away and only the voice carries the mood. I wrote two scenes like that. In one, someone just got a call back about a job they really wanted: <em>"So, they called me back. About the job."</em> In the other, someone just checked the grade that decides whether they stay in their program: <em>"I just checked my grade for that course."</em> Each line was read three ways: excited, sad and plain.</p>
+<p>My first clips came from Grok's text-to-speech, using a voice called Eve. You control the emotion there with tags like <code>[sigh]</code> or <code>&lt;slow&gt;</code>, and the emotion kept fading partway through. One "sad" clip only sounded sad on two of its four sentences. So I switched to Qwen3-TTS, an open model running locally on my Mac, with one of its built-in voices called Ryan. It takes a written instruction for every sentence, like "sad the whole way through", so I rendered each sentence on its own, made three takes and kept the one an emotion classifier scored best. That gave 333 takes across all the scenes, and 81 for the same-words test (9 sentences, 3 tones, 3 takes).</p>
+<p>Then I played each take into Moshi on its own while forcing Moshi to stay silent. Its text was pinned to the "say nothing" token and its audio to the codes for silence, so the only thing that changed from run to run was the voice coming in. Every 80 ms, I saved what Moshi was holding at the input and after each of its 32 layers.</p>
+
+<figure class="fig" id="fig-arch"><div class="figbox">
+<svg id="archsvg" viewBox="0 0 860 240" role="img" aria-label="Moshi architecture, click a layer"></svg>
+<div class="stat" id="archstat"></div>
+</div><figcaption><b>fig 1.</b> how audio moves through moshi. the mimi codec turns every 80 ms of sound into 8 tokens; moshi looks each one up as a list of 4096 numbers and adds them together. each of the 32 layers reads that list and adds its own edit. column shade is how easily tone can be read from that layer after the speaker stops. click a column to pick the layer used by the figures below.</figcaption></figure>
+
+<h2 id="can-you-read-it">can you read tone out of it?</h2>
+<p>The simplest way to ask whether a layer "knows" something is to try to read it back out. For every layer I averaged its state over a clip and trained a tiny classifier to guess the tone. The catch is that the classifier never sees the sentence it's tested on. It learns from the other eight sentences and has to name the tone of the ninth, so it can't cheat by recognising the words. With three tones, guessing gets you 33%.</p>
+<figure class="fig" id="fig-decode"><div class="figbox"><div class="legend" id="decode-legend"></div><svg id="decodesvg" viewBox="0 0 860 280" role="img" aria-label="Tone readable at each layer"></svg></div>
+<figcaption><b>fig 2.</b> share of held-out clips whose tone a simple classifier names correctly, at each layer. the dashed line is what the same classifier gets when the tone labels are shuffled (95th percentile), which is the real floor.</figcaption></figure>
+<p>Tone is readable everywhere. About 79% of clips can be read straight from the input, before any layer has run, which makes sense: the codec keeps what your voice sounds like, so the information is there from the start. Clip length on its own only gets 31%, so this isn't just "sad clips are longer".</p>
+<p>The part I didn't expect is what happens after the speaker stops. For the next 1.2 seconds the input is pure silence, and the input layer drops to 72%. The transformer layers hold <mark class="hl">84 to 88%</mark> the whole way up to layer 31. Moshi keeps a memory of how you sounded after you've finished talking.</p>
+
+<h2 id="what-lights-up">what lights up</h2>
+<p>A quick word on "neurons". The 4096 numbers at each layer aren't neurons in the biological sense. They're the running list that every layer reads and edits, which people call the residual stream. Still, you can ask the same question of each one: does it go up when the voice is sad, and down when it's excited?</p>
+<figure class="fig" id="fig-units"><div class="figbox">
+<div class="ctl"><span class="layer" id="ulayer"></span><input type="range" id="uslider" min="0" max="32" step="1" aria-label="layer"><button class="btn" id="uplay" type="button">sweep layers</button></div>
+<div class="two"><canvas class="grid" id="grid" width="64" height="64" aria-label="unit grid"></canvas>
+<div><div class="legend"><span class="key"><span class="dotk" style="background:var(--excited)"></span>up when excited</span><span class="key"><span class="dotk" style="background:var(--mid);box-shadow:inset 0 0 0 1px var(--rule-strong)"></span>doesn't care</span><span class="key"><span class="dotk" style="background:var(--sad)"></span>up when sad</span></div>
+<div class="stat" id="ustat"></div><p class="lbl2" id="unote" style="font:12px/1.6 var(--sans);color:var(--ink-2);margin:14px 0 0"></p></div></div>
+</div><figcaption><b>fig 3.</b> all 4096 units at one layer, coloured by effect size (cohen's d): the gap between the sad and excited averages, divided by the normal take-to-take wobble. d of 1 means the gap is as big as the wobble. the grid order is arbitrary, so look at how much lights up, not where.</figcaption></figure>
+<p>There's no single sad neuron. At the first layer, 759 units shift by more than a full wobble in both the job scene and the grade scene, every one of them in the same direction both times, and none in opposite directions. Hundreds of units each move a little, together. So the useful thing to measure isn't a unit, it's a direction in that 4096-number space.</p>
+
+<h2 id="watching-it-listen">watching it listen</h2>
+<p>That direction makes the whole thing easy to watch. I took the average "sad" state minus the average "excited" state (after putting every unit on the same scale, so a few huge units don't drown out the rest). Then, at every 80 ms frame, I checked how far Moshi's state sat along that line. Press play and the dot follows the audio.</p>
+<figure class="fig" id="fig-listen"><div class="figbox">
+<div class="ctl"><select id="lscene" aria-label="scene"></select><select id="laxis" aria-label="axis"></select><span class="layer" id="llayer"></span><input type="range" id="lslider" min="0" max="32" step="1" aria-label="layer"></div>
+<div class="legend" id="llegend"></div>
+<svg id="lsvg" viewBox="0 0 860 300" role="img" aria-label="tone over time"></svg>
+<div class="players" id="lplayers"></div>
+<div class="spark" id="lspark"></div>
+</div><figcaption><b>fig 4.</b> moshi's state over time, projected onto the excited-to-sad direction at the chosen layer. shading marks when the voice is playing; the dashed line is where that version stops. the small charts are the six units that react most strongly at this layer.</figcaption></figure>
+<p>The lines split almost as soon as the voice starts and stay apart while it plays. Then, once the voice stops, they drift back together. At first that looked like it contradicted the 84 to 88% from before, so I checked. The direction that separates tones while you're talking and the one that separates them afterwards barely overlap (cosine similarity of 0.14 to 0.42 depending on the layer). Moshi files the memory of your tone somewhere other than where it first heard it.</p>
+
+<h2 id="the-map">the map</h2>
+<p>Here's a view that doesn't use the tone labels at all. For each sentence I subtracted its average state, which removes what the words contribute, and then flattened the 4096 numbers down to the two patterns that vary the most. Nobody told the flattening about tone. If the colours still clump, the voice is what moves Moshi most once the words are gone.</p>
+<figure class="fig" id="fig-map"><div class="figbox">
+<div class="ctl"><button class="btn" id="mwin1" type="button" aria-pressed="true">while speaking</button><button class="btn" id="mwin2" type="button" aria-pressed="false">1.2 s after</button><span class="layer" id="mlayer"></span><input type="range" id="mslider" min="0" max="32" step="1" aria-label="layer"></div>
+<div class="legend"><span class="key"><span class="dotk" style="background:var(--excited)"></span>excited</span><span class="key"><span class="dotk" style="background:var(--sad)"></span>sad</span><span class="key"><span class="dotk" style="background:var(--plain)"></span>plain</span></div>
+<svg id="msvg" viewBox="0 0 860 400" role="img" aria-label="clip map"></svg>
+</div><figcaption><b>fig 5.</b> all 81 same-words clips (9 sentences, 3 tones, 3 takes), with each sentence's average removed and squashed to two dimensions with pca. hover a dot to see its sentence.</figcaption></figure>
+
+<h2 id="does-it-carry-over">does it carry over?</h2>
+<p>A direction learned from two scenes could just be memorising those scenes. So I tested it on stories it never saw. I learned the sad direction from the job and grade calls only, then used it to score a different scene: someone telling you their dog died, read sad and read plain. Same for excited, tested on someone who just got a job offer.</p>
+<figure class="fig" id="fig-transfer"><div class="figbox"><div class="legend" id="transfer-legend"></div><svg id="transfersvg" viewBox="0 0 860 260" role="img" aria-label="transfer to new scenes"></svg></div>
+<figcaption><b>fig 6.</b> how well a direction learned on the job and grade calls separates emotional from plain readings of a scene it never saw (auc: 50% is a coin flip, 100% is perfect).</figcaption></figure>
+<p>It transfers almost perfectly for sad and very well for excited. The sad-minus-excited direction from the job scene and the one from the grade scene also point the same way (cosine similarity of 0.85 to 0.91), so this is one shared axis rather than two lucky ones.</p>
+<p>Every one of those clips is still the same Qwen voice, though, which was my biggest worry. So I went back to the old Grok clips: a different engine, a female voice, longer scripts and tag-based emotion. I used the same directions with no refitting.</p>
+<figure class="fig" id="fig-grok"><div class="figbox">
+<div class="ctl"><select id="gscene" aria-label="script"></select><select id="gaxis" aria-label="axis"></select><span class="layer" id="glayer"></span><input type="range" id="gslider" min="0" max="32" step="1" aria-label="layer"></div>
+<div class="legend" id="glegend"></div>
+<svg id="gsvg" viewBox="0 0 860 280" role="img" aria-label="grok clips over time"></svg>
+<div class="players" id="gplayers"></div>
+<svg id="gstrip" viewBox="0 0 860 150" role="img" aria-label="every grok clip on the axis" style="margin-top:16px"></svg>
+<div class="stat" id="gstat"></div>
+</div><figcaption><b>fig 7.</b> grok's eve voice on the directions learned from qwen's ryan. the strip places every grok clip by its average position while speaking, including three deliveries the direction was never shown: flat, hesitant and frustrated.</figcaption></figure>
+<p>It still works. Sad lands past plain and plain lands past excited in both scripts. But the strip shows something more interesting: Grok's flat and hesitant clips land even further toward the sad end than its actual sad clips. So the axis isn't really "sadness". It's closer to <mark class="hl">energy</mark>: bright, fast and animated at one end, low, slow and flat at the other. Psychologists call this arousal, and it's the easiest part of emotion to hear in a voice. Telling sad apart from bored or unsure would need a second direction, and probably training data that separates them.</p>
+
+<h2 id="the-bottleneck">the bottleneck</h2>
+<p>So Moshi hears tone, holds onto it and represents it in a way that generalises. Does any of that reach what it says?</p>
+<figure class="fig" id="fig-neck"><div class="figbox"><div class="bars" id="bars"></div></div>
+<figcaption><b>fig 8.</b> how often a classifier names the tone from each stage, with sentences held out. the dashed mark is guessing (33%).</figcaption></figure>
+<p>Barely. Layer 31 is the last stop before Moshi picks its next word, and tone is readable there 85% of the time. Push that same state through the word head and it drops to around half. Moshi's chance of starting to talk is the same for every tone, about 2.5% per frame, and its top first word is "Yeah" for all three. If I ignore the silence token and only compare word choices, there's a faint fingerprint of tone, but the shift between a sad and an excited clip is barely bigger than the shift between two takes of the same tone.</p>
+<p>The information reaches the doorway and doesn't get used to choose what to say.</p>
+
+<h2 id="beyond-happy-and-sad">beyond happy and sad</h2>
+<p>Sad versus excited is the easiest contrast there is. One is slow and quiet, the other fast and bright. Real people sound sarcastic, bored, disgusted or quietly anxious, and a model that adapts its tone has to tell those apart too. So I widened the test to twelve emotions: neutral, happy, sad, angry, anxious, surprised, disgusted, bored, sarcastic, amused, tender and contemptuous.</p>
+<p>I wrote ten sentences whose words fit any mood ("They moved the meeting to Friday", "So that's what you decided", "You cooked dinner for everyone"), and had each one read in all twelve emotions by four voices: Qwen's Ryan and Serena, plus two voices generated from a written description, a woman in her thirties and a man in his forties. Every line was rendered twice and the better take kept, which gave 480 clips. The renders aren't equally good. An emotion classifier agreed with 35 of 40 neutral clips, 34 happy and 31 angry, but only 24 sad, 8 surprised, 6 anxious and 6 disgusted. Bored, sarcastic, amused, tender and contemptuous have no label in that classifier, so I picked those takes by loudness, pitch movement and pace. Some of what follows is limited by the renders, not by Moshi.</p>
+<p>Then I ran the same probe as before, but harder: it had to name the emotion of a voice it was never trained on.</p>
+<figure class="fig" id="fig-emoprobe"><div class="figbox"><div class="legend" id="emoprobe-legend"></div><svg id="emoprobesvg" viewBox="0 0 860 280" role="img" aria-label="twelve emotions by layer"></svg></div>
+<figcaption><b>fig 9.</b> share of clips whose emotion (out of 12) a simple classifier names correctly at each layer, trained on three voices and tested on the fourth, or trained on nine sentences and tested on the tenth.</figcaption></figure>
+<p>Moshi gets it right 38% of the time on a voice it has never heard, against 8% for guessing, and 45% on a sentence it has never heard. It climbs through the first ten layers and peaks around layer 9, then holds. After the voice stops it still carries about a third of it. Not perfect, but real.</p>
+<figure class="fig" id="fig-confusion"><div class="figbox"><svg id="confsvg" style="max-width:520px" viewBox="0 0 470 470" role="img" aria-label="confusion matrix"></svg></div>
+<figcaption><b>fig 10.</b> what each emotion gets mistaken for at layer 9, on voices the classifier never trained on. rows are the real emotion, columns what it was heard as, 40 clips per row.</figcaption></figure>
+<p>The mistakes are more interesting than the score. Angry (28 of 40), amused (28) and happy (26) are easy. Sarcastic (3), contemptuous (4), anxious (7) and bored (8) mostly aren't. And the confusions follow a pattern: sad and tender get swapped, anxious and bored both drift towards sad, and surprised, sarcastic and contemptuous mostly get heard as happy. They're all mixed up with something at the same energy level.</p>
+<figure class="fig" id="fig-emomap"><div class="figbox"><svg id="emomapsvg" viewBox="0 0 860 210" role="img" aria-label="emotions along the main axis"></svg></div>
+<figcaption><b>fig 11.</b> where each emotion's average sits at layer 9 along the direction that separates them most once amused is set aside (the second principal component, words removed). hover a dot for that emotion's average pitch, pitch movement and pace.</figcaption></figure>
+<p>Laying the emotions out shows the same thing. Amused sits off on its own along the strongest direction, which makes sense since those clips have actual laughing in them. Everything else lines up along the next one: angry, happy and surprised at one end, sad, tender and bored at the other. When I checked what that direction tracks, it lines up with how high the voice is (a correlation of 0.81 across the twelve emotions) and how much the pitch moves (0.75), and not with loudness at all (0.07). That's the energy axis from the Grok test again, and it's mostly pitch. The probe still gets plenty right within the same pitch range, so there are finer distinctions in there, but this is the biggest one.</p>
+
+<h2 id="the-neurons">the neurons</h2>
+<p>Then the part I was most curious about: are there neurons for any of this? Each of Moshi's 32 layers has 11,264 MLP neurons, 360,448 in total. For every neuron and every emotion I measured how far it moves for that emotion compared with the rest, separately in each of the four voices, and only counted it if it moved by more than a full spread in the same direction in all four. With the emotion labels shuffled, that rule finds zero neurons. With the real labels, it finds 86.</p>
+<figure class="fig" id="fig-heat"><div class="figbox"><svg id="heatsvg" viewBox="0 0 860 290" role="img" aria-label="strong neurons by layer and emotion"></svg></div>
+<figcaption><b>fig 12.</b> neurons per layer that move strongly for each emotion in all four voices. stronger colour means more. hover a cell to compare with shuffled labels.</figcaption></figure>
+<p>So yes, but not many, and they're lopsided. 52 of the 86 are for anger and 15 for sadness, and 66 sit in the first eleven layers, close to the input, where they're probably reacting to the raw sound, like pitch, rather than anything you'd call understanding. Sarcasm gets none at all, not even at a looser threshold. Combined with the probe results, the picture is that emotion mostly isn't stored in a few dedicated neurons. It's spread thinly across many of them as a direction, which is what the 4096-number analysis earlier suggested too.</p>
+<figure class="fig" id="fig-examples"><div class="figbox"><div class="two" id="examples"></div></div>
+<figcaption><b>fig 13.</b> the strongest sad neuron and the strongest happy neuron: how much each one moves for every emotion (the weakest of the four voices). the happy neuron also rises for surprise, the same energy pairing as fig 11.</figcaption></figure>
+<p>Every one of these neurons, with the clips that push it furthest and its frame-by-frame trace, is in the <a href="../emotions/atlas/index.html">neuron atlas</a>. Sad and happy are highlighted throughout so you can compare them directly.</p>
+<p>Sarcasm is the one I don't know how to read yet. It might be that Moshi really doesn't pick it up. But sarcasm usually works through a mismatch between the words and the voice, and these sentences were picked to be neutral, so there was nothing for the voice to contradict. It's also the hardest thing to render, and nothing here checks that the sarcastic clips actually sound sarcastic. That needs real recordings and a sentence that sets it up.</p>
+
+<h2 id="how-this-compares">how this compares</h2>
+<p>Two other voice models came up while I was doing this, and they sit on either side of Moshi.</p>
+<p><a href="https://block.xyz/dessa">Dessa</a>, from a small research lab at Block, is full-duplex like Moshi but trained from scratch on nothing but recorded human conversation. No text, no pretrained language model. The page says it "natively hears and speaks emotion, sarcasm, laughter, a frustrated sigh, a voice cracking with sadness", and the demos are full of backchannels, laughs and pace changes. There's no paper, no architecture, no numbers and nothing about what happens inside it, so it's a set of claims for now, not a result I can check. What makes it interesting next to these results is the missing text stream. Moshi speaks by first predicting a word (its "inner monologue") and then the audio for it, and the word head is exactly where the tone signal dies. A model that never routes through text doesn't have that doorway. If Dessa really does sound this responsive, that would be one explanation worth testing.</p>
+<p><a href="https://www.sesame.com/research/crossing_the_uncanny_valley_of_voice">Sesame's CSM</a> takes the opposite route. It isn't full-duplex: it takes turns, reading the whole conversation so far as interleaved text and audio, and then generates its reply with a big backbone transformer plus a small audio decoder. It uses the same Mimi codec as Moshi, so it hears your voice through the exact same 8 tokens per 80 ms that already carried 79% of the tone in my test. Their own evaluation is the telling part. Without context, listeners can't tell CSM from a real recording. Given the previous 90 seconds of conversation, they consistently prefer the real person. In their words, "a noticeable gap remains between generated and human prosody in conversational speech generation". That's the same gap I'm poking at from the inside: the tone is in the input, and the model doesn't fully use it to decide how to respond.</p>
+<p>The neuron atlas borrows its shape from <a href="https://www.goodfire.com/research/neurons-as-an-interpretable-basis">Goodfire's neuron atlas</a> for Qwen3.6. Their argument is that MLP neurons, the gated units inside each layer, are more interpretable than people assumed: most have one main job, and they treat each neuron's positive and negative extremes ("poles") separately. Moshi's layers use the same kind of gated neuron, 11,264 per layer, so the same lens fits.</p>
+
+<h2 id="what-it-means">what it means for the build</h2>
+<p>This is good news for the project. The hard part, hearing emotion in a voice, is already there. A fine-tune doesn't have to teach Moshi to listen. It has to connect a signal Moshi already has to the choice of what to say and how to say it. That's a much smaller job, and it's the kind of thing a small LoRA fine-tune should be able to do.</p>
+<p>The next experiment is a causal one. Everything above shows that tone is present; it doesn't show that changing it changes anything. So I'll take the sad direction, add it into Moshi's layers while it hears a plain reading in a live call, and see whether its replies shift. If they do, some of the adaptation might come from steering alone. If not, fine-tuning is the way.</p>
+
+<h2 id="caveats">caveats</h2>
+<ul>
+<li>Every clip is synthetic speech. Two different engines and voices help, but real people sound messier.</li>
+<li>Each clip is a single sentence played cold, with no conversation before it, and Moshi was held silent the whole time.</li>
+<li>The word-head numbers come from pushing averaged states through the head, which is a rough approximation of what happens frame by frame.</li>
+<li>I only looked at the words. Tone might still change how Moshi's own voice sounds, and I haven't measured that yet.</li>
+<li>The Grok check is two scripts. It's encouraging, not proof.</li>
+<li>The twelve-emotion clips are rendered speech too, and several emotions (surprised, anxious, disgusted, and probably sarcastic and contemptuous) aren't rendered convincingly. Low scores for those may be the renders' fault rather than Moshi's.</li>
+</ul>
+      </div>
+      <div class="endmark num">11.15.26 · does moshi hear tone? · rohanth.com</div>
+    </article>
+  </main>
+</div>
+<div class="tip" id="tip" hidden></div>
+<script>
+const D=__DATA__;
+const L=D.layers.length;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const TONE={excited:'--excited',sad:'--sad',plain:'--plain',flat:'--flat',hesitant:'--hesitant',frustrated:'--frustrated'};
+const tc=t=>css(TONE[t]);
+const AXES={sad_vs_excited:['excited','sad'],sad_vs_plain:['plain','sad'],excited_vs_plain:['plain','excited']};
+const AXIS_LABEL={sad_vs_excited:'excited to sad',sad_vs_plain:'plain to sad',excited_vs_plain:'plain to excited'};
+const tip=document.getElementById('tip');
+const showTip=(e,h)=>{tip.hidden=false;tip.innerHTML=h;tip.style.left=Math.min(e.clientX+14,innerWidth-tip.offsetWidth-8)+'px';tip.style.top=(e.clientY+16)+'px'};
+const hideTip=()=>{tip.hidden=true};
+const lname=i=>i===0?'input':'layer '+D.layers[i];
+const pct=v=>Math.round(v*100)+'%';
+function hex(c){const m=c.match(/^#([0-9a-f]{6})$/i);if(m)return[0,2,4].map(i=>parseInt(m[1].slice(i,i+2),16));const n=c.match(/[\d.]+/g);return n?n.slice(0,3).map(Number):[128,128,128]}
+function mix(a,b,t){const x=hex(a),y=hex(b);return`rgb(${x.map((v,i)=>Math.round(v*(1-t)+y[i]*t))})`}
+
+let shared=17;const sliders=[];
+function linkSlider(id,badge,render){const s=document.getElementById(id);sliders.push([s,badge,render]);s.addEventListener('input',()=>setLayer(+s.value))}
+function setLayer(i){shared=i;for(const[s,b,r]of sliders){s.value=i;document.getElementById(b).textContent=lname(i);r()}drawArch()}
+
+function drawArch(){
+  const svg=document.getElementById('archsvg'),x0=250,x1=690,cw=(x1-x0)/L,lo=Math.min(...D.decode_after)-.02,hi=Math.max(...D.decode_after);
+  const ink2=css('--ink-3'),line=css('--rule-strong');let s=`<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="${ink2}"/></marker></defs>`;
+  const box=(x,y,w,h,...lines)=>{const top=y+h/2-(lines.length-1)*8+4;return`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="${line}"/>`+lines.map((t,k)=>`<text x="${x+w/2}" y="${top+k*16}" class="${k?'lbl2':'lbl'}" text-anchor="middle">${t}</text>`).join('')};
+  s+=box(4,95,90,56,'your voice','24 kHz audio');s+=`<path d="M96 123h20" stroke="${ink2}" marker-end="url(#ar)"/>`;
+  s+=box(120,85,112,76,'mimi codec','8 tokens','every 80 ms');s+=`<path d="M234 123h12" stroke="${ink2}" marker-end="url(#ar)"/>`;
+  for(let i=0;i<L;i++){const t=Math.max(0,Math.min(1,(D.decode_after[i]-lo)/(hi-lo)));const sel=i===shared;
+    s+=`<rect data-i="${i}" x="${x0+i*cw+1}" y="58" width="${cw-2}" height="130" fill="${mix(css('--mid'),css('--accent'),.12+.68*t)}" stroke="${sel?css('--ink'):'none'}" stroke-width="2" style="cursor:pointer"/>`}
+  s+=`<text x="${x0}" y="48" class="lbl2">input</text><text x="${(x0+x1)/2}" y="48" class="lbl2" text-anchor="middle">32 layers · 4096 numbers each</text><text x="${x1}" y="48" class="lbl2" text-anchor="end">31</text>`;
+  s+=`<text x="${x0}" y="210" class="lbl2">lighter: harder to read tone · darker: easier (${pct(Math.min(...D.decode_after))} to ${pct(Math.max(...D.decode_after))})</text>`;
+  s+=`<path d="M${x1+2} 98h22" stroke="${ink2}" marker-end="url(#ar)"/><path d="M${x1+2} 148h22" stroke="${ink2}" marker-end="url(#ar)"/>`;
+  s+=box(x1+26,76,138,44,'word head','next word or silence');s+=box(x1+26,126,138,44,'depth transformer',"moshi's own voice");
+  svg.innerHTML=s;
+  svg.querySelectorAll('rect[data-i]').forEach(r=>{r.onclick=()=>setLayer(+r.dataset.i);r.onpointermove=e=>{const i=+r.dataset.i;showTip(e,`<b>${lname(i)}</b><br>while speaking ${pct(D.decode_during[i])}<br>after they stop ${pct(D.decode_after[i])}`)};r.onpointerleave=hideTip});
+  document.getElementById('archstat').innerHTML=`<div>selected<b>${lname(shared)}</b></div><div>while speaking<b>${pct(D.decode_during[shared])}</b></div><div>after they stop<b>${pct(D.decode_after[shared])}</b></div><div>guessing<b>33%</b></div>`;
+}
+
+function layerChart(svgId,legendId,series,lo,hi,ref){
+  const svg=document.getElementById(svgId),W=860,H=+svg.getAttribute('viewBox').split(' ')[3],l=44,r=14,t=12,b=28,pw=W-l-r,ph=H-t-b;
+  const X=i=>l+pw*i/(L-1),Y=v=>t+ph*(1-(v-lo)/(hi-lo));let s='';
+  for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4;s+=`<line x1="${l}" x2="${W-r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css('--rule-strong')}"/><text x="${l-8}" y="${Y(v)+4}" class="axis" text-anchor="end">${pct(v)}</text>`}
+  for(let i=0;i<L;i++)if(i===0||i%4===0||i===L-1)s+=`<text x="${X(i)}" y="${H-8}" class="axis" text-anchor="middle">${i===0?'in':D.layers[i]}</text>`;
+  if(ref)s+=`<line x1="${l}" x2="${W-r}" y1="${Y(ref[1])}" y2="${Y(ref[1])}" stroke="${css('--ink-3')}" stroke-dasharray="2 4"/><text x="${W-r}" y="${Y(ref[1])-6}" class="axis" text-anchor="end">${ref[0]}</text>`;
+  series.forEach(([name,vals,color,dash])=>{s+=`<polyline points="${vals.map((v,i)=>`${X(i)},${Y(v)}`).join(' ')}" fill="none" stroke="${color}" stroke-width="2" ${dash?'stroke-dasharray="5 4"':''} stroke-linejoin="round"/>`;if(!dash)s+=`<circle cx="${X(L-1)}" cy="${Y(vals[L-1])}" r="4" fill="${color}" stroke="${css('--surface')}" stroke-width="2"/>`});
+  s+=`<line class="cross" opacity="0" x1="0" x2="0" y1="${t}" y2="${t+ph}" stroke="${css('--ink-3')}"/><rect class="hit" x="${l}" y="${t}" width="${pw}" height="${ph}" fill="transparent"/>`;
+  svg.innerHTML=s;
+  document.getElementById(legendId).innerHTML=series.map(([n,,c,d])=>`<span class="key"><span class="sw" style="${d?`border-top:2px dashed ${c};height:0`:`background:${c}`}"></span>${n}</span>`).join('');
+  const hit=svg.querySelector('.hit'),cross=svg.querySelector('.cross');
+  hit.onpointermove=e=>{const rc=svg.getBoundingClientRect(),sx=(e.clientX-rc.left)*W/rc.width,i=Math.max(0,Math.min(L-1,Math.round((sx-l)/pw*(L-1))));cross.setAttribute('opacity',1);cross.setAttribute('x1',X(i));cross.setAttribute('x2',X(i));showTip(e,`<b>${lname(i)}</b><br>`+series.map(([n,v])=>`${n}: ${pct(v[i])}`).join('<br>'))};
+  hit.onpointerleave=()=>{hideTip();cross.setAttribute('opacity',0)};
+}
+function drawDecode(){layerChart('decodesvg','decode-legend',[['while the speaker talks',D.decode_during,css('--accent')],['1.2 s after they stop',D.decode_after,css('--excited')],['shuffled labels',D.floor,css('--ink-3'),true]],0,1,['guessing 33%',1/3])}
+function drawTransfer(){const names=Object.keys(D.transfer);layerChart('transfersvg','transfer-legend',[['sad, tested on the dog story',D.transfer[names[0]],css('--sad')],['excited, tested on the job offer',D.transfer[names[1]],css('--excited')]],.4,1,['coin flip',.5])}
+
+const grid=document.getElementById('grid'),gctx=grid.getContext('2d');
+function drawUnits(){
+  const e=D.effects[shared],img=gctx.createImageData(64,64),mid=css('--mid'),sad=css('--sad'),exc=css('--excited');
+  for(let u=0;u<4096;u++){const d=e[u]/20,c=hex(mix(mid,d>0?sad:exc,Math.min(1,Math.abs(d)/3)));img.data.set([c[0],c[1],c[2],255],u*4)}
+  gctx.putImageData(img,0,0);
+  let a1=0,a2=0,sadN=0;for(const v of e){const d=Math.abs(v/20);if(d>1)a1++;if(d>2){a2++;if(v>0)sadN++}}
+  document.getElementById('ustat').innerHTML=`<div>units with d over 1<b>${a1}</b></div><div>d over 2<b>${a2}</b></div><div>of those, sad side<b>${a2?Math.round(sadN/a2*100):0}%</b></div>`;
+  document.getElementById('unote').textContent=`Strongest at ${lname(shared)}: `+D.top_units[shared].map(u=>`#${u} (d ${(e[u]/20).toFixed(1)})`).join(', ')+'.';
+}
+grid.onpointermove=ev=>{const r=grid.getBoundingClientRect(),x=Math.floor((ev.clientX-r.left)/r.width*64),y=Math.floor((ev.clientY-r.top)/r.height*64),u=y*64+x;if(u<0||u>4095)return;const d=D.effects[shared][u]/20;showTip(ev,`unit #${u}<br>d = ${d.toFixed(2)}, ${Math.abs(d)<.5?"doesn't care":d>0?'higher when sad':'higher when excited'}`)};
+grid.onpointerleave=hideTip;
+let sweep=null;const ub=document.getElementById('uplay');
+ub.onclick=()=>{if(sweep){clearInterval(sweep);sweep=null;ub.textContent='sweep layers';return}let i=0;ub.textContent='stop';sweep=setInterval(()=>{setLayer(i++);if(i>=L){clearInterval(sweep);sweep=null;ub.textContent='sweep layers'}},280)};
+
+function timeChart(svgId,traces,axis,heads){
+  const svg=document.getElementById(svgId),W=860,H=+svg.getAttribute('viewBox').split(' ')[3],l=44,r=12,t=14,b=28,pw=W-l-r,ph=H-t-b;
+  const fs=traces[0].frame_s,maxF=Math.max(...traces.map(x=>x.projection[axis][shared].length));
+  const vals=traces.flatMap(x=>x.projection[axis][shared]);let lo=Math.min(...vals),hi=Math.max(...vals);const pad=(hi-lo)*.08||1;lo-=pad;hi+=pad;
+  const X=f=>l+pw*f/(maxF-1),Y=v=>t+ph*(1-(v-lo)/(hi-lo));let s='';
+  const step=Math.pow(10,Math.floor(Math.log10((hi-lo)/4))),nice=[1,2,5,10].map(m=>m*step).find(m=>(hi-lo)/m<=6);
+  for(let v=Math.ceil(lo/nice)*nice;v<=hi;v+=nice)s+=`<line x1="${l}" x2="${W-r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${Math.abs(v)<1e-9?css('--ink-3'):css('--rule-strong')}"/><text x="${l-8}" y="${Y(v)+4}" class="axis" text-anchor="end">${+v.toFixed(1)}</text>`;
+  const tick=maxF*fs>14?2:1;for(let sec=0;sec/fs<maxF;sec+=tick)s+=`<text x="${X(sec/fs)}" y="${H-8}" class="axis" text-anchor="middle">${sec}s</text>`;
+  const[neg,pos]=AXES[axis];s+=`<text x="${l+8}" y="${t+12}" class="lbl2">${pos} side</text><text x="${l+8}" y="${t+ph-6}" class="lbl2">${neg} side</text>`;
+  traces.forEach(x=>{const[a,z]=x.speech;s+=`<rect x="${X(a)}" y="${t}" width="${X(z)-X(a)}" height="${ph}" fill="${tc(x.tone)}" opacity=".05"/><line x1="${X(z)}" x2="${X(z)}" y1="${t}" y2="${t+ph}" stroke="${tc(x.tone)}" stroke-dasharray="3 4" opacity=".8"/>`});
+  traces.forEach(x=>{s+=`<polyline points="${x.projection[axis][shared].map((v,f)=>`${X(f).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')}" fill="none" stroke="${tc(x.tone)}" stroke-width="1.8" stroke-linejoin="round"/>`});
+  traces.forEach((x,k)=>{const f=heads[k];if(f==null)return;const p=x.projection[axis][shared],ff=Math.min(f,p.length-1);s+=`<line x1="${X(ff)}" x2="${X(ff)}" y1="${t}" y2="${t+ph}" stroke="${tc(x.tone)}" stroke-width="1.5"/><circle cx="${X(ff)}" cy="${Y(p[ff])}" r="5" fill="${tc(x.tone)}" stroke="${css('--surface')}" stroke-width="2"/>`});
+  s+=`<line class="cross" opacity="0" x1="0" x2="0" y1="${t}" y2="${t+ph}" stroke="${css('--ink-3')}"/><rect class="hit" x="${l}" y="${t}" width="${pw}" height="${ph}" fill="transparent"/>`;
+  svg.innerHTML=s;const hit=svg.querySelector('.hit'),cross=svg.querySelector('.cross');
+  hit.onpointermove=e=>{const rc=svg.getBoundingClientRect(),sx=(e.clientX-rc.left)*W/rc.width,f=Math.max(0,Math.min(maxF-1,Math.round((sx-l)/pw*(maxF-1))));cross.setAttribute('opacity',1);cross.setAttribute('x1',X(f));cross.setAttribute('x2',X(f));
+    showTip(e,`<b>${(f*fs).toFixed(2)} s</b><br>`+traces.map(x=>{const v=x.projection[axis][shared][f];const st=f<x.speech[0]?'not started':f<x.speech[1]?'speaking':'finished';return`${x.tone}: ${v==null?'–':v.toFixed(1)} (${st})`}).join('<br>'))};
+  hit.onpointerleave=()=>{hideTip();cross.setAttribute('opacity',0)};
+}
+
+function section(prefix,pool,extra){
+  const scenes=[...new Set(pool.map(x=>x.scene))],sSel=document.getElementById(prefix+'scene'),aSel=document.getElementById(prefix+'axis');
+  sSel.innerHTML=scenes.map(sc=>{const tx=pool.find(x=>x.scene===sc).text;return`<option value="${sc}">“${tx.length>44?tx.slice(0,44)+'…':tx}”</option>`}).join('');
+  aSel.innerHTML=Object.keys(AXES).map(a=>`<option value="${a}">${AXIS_LABEL[a]} axis</option>`).join('');
+  const heads=[null,null,null];let audios=[];const cur=()=>pool.filter(x=>x.scene===sSel.value);
+  function render(){const tr=cur();timeChart(prefix+'svg',tr,aSel.value,heads);
+    document.getElementById(prefix+'legend').innerHTML=tr.map(x=>`<span class="key"><span class="sw" style="background:${tc(x.tone)}"></span>${x.tone}</span>`).join('')+'<span class="key">dashed: that version stops</span>';
+    if(extra)extra(tr,aSel.value)}
+  function players(){audios.forEach(a=>a.pause());const box=document.getElementById(prefix+'players');box.innerHTML='';audios=[];
+    cur().forEach((x,k)=>{const a=new Audio(x.audio);audios.push(a);const d=document.createElement('div');d.className='player';
+      d.innerHTML=`<button type="button" aria-label="play ${x.tone}">▶</button><span class="dotk" style="background:${tc(x.tone)}"></span><span>${x.tone}</span><span class="len">${((x.speech[1]-x.speech[0])*x.frame_s).toFixed(1)} s</span>`;
+      const btn=d.querySelector('button');btn.onclick=()=>{if(a.paused){audios.forEach((o,j)=>{if(j!==k){o.pause();o.currentTime=0}});a.currentTime=0;a.play()}else a.pause()};
+      a.onplay=()=>{btn.textContent='■';const step=()=>{if(a.paused)return;heads[k]=Math.round((x.lead_s+a.currentTime)/x.frame_s);render();requestAnimationFrame(step)};step()};
+      a.onpause=a.onended=()=>{btn.textContent='▶';heads[k]=null;render()};box.appendChild(d)})}
+  sSel.onchange=()=>{heads.fill(null);players();render()};aSel.onchange=render;players();return render;
+}
+function sparks(tr){
+  document.getElementById('lspark').innerHTML=D.top_units[shared].map(u=>{const ser=tr.map(x=>x.units[String(shared)][String(u)]),all=ser.flat(),lo=Math.min(...all),hi=Math.max(...all),W=200,H=54,mf=Math.max(...ser.map(s=>s.length));
+    const d=D.effects[shared][u]/20;return`<figure><figcaption>#${u} · d ${d>0?'+':''}${d.toFixed(1)} · ${d>0?'sad':'excited'} side</figcaption><svg viewBox="0 0 ${W} ${H}">${ser.map((s,k)=>`<polyline fill="none" stroke-width="1.4" stroke="${tc(tr[k].tone)}" points="${s.map((v,f)=>`${(W*f/(mf-1)).toFixed(1)},${(H-3-(H-6)*(v-lo)/((hi-lo)||1)).toFixed(1)}`).join(' ')}"/>`).join('')}</svg></figure>`}).join('')}
+function grokStrip(tr,axis){
+  const rows=D.traces.grok_summary,svg=document.getElementById('gstrip'),W=860,l=90,r=20,[neg,pos]=AXES[axis];
+  const vals=rows.map(x=>x.summary[axis][shared]);let lo=Math.min(...vals,0),hi=Math.max(...vals,0);const pad=(hi-lo)*.1||1;lo-=pad;hi+=pad;
+  const X=v=>l+(W-l-r)*(v-lo)/(hi-lo),scenes=[...new Set(rows.map(x=>x.scene))];
+  let s=`<line x1="${X(0)}" x2="${X(0)}" y1="8" y2="122" stroke="${css('--ink-3')}" stroke-dasharray="2 4"/><text x="${l}" y="144" class="axis">${neg} side</text><text x="${W-r}" y="144" class="axis" text-anchor="end">${pos} side</text>`;
+  scenes.forEach((sc,k)=>{const y=34+k*52;s+=`<text x="0" y="${y+4}" class="lbl2">${sc}</text><line x1="${l}" x2="${W-r}" y1="${y}" y2="${y}" stroke="${css('--rule-strong')}"/>`;
+    rows.filter(x=>x.scene===sc).sort((a,b)=>a.summary[axis][shared]-b.summary[axis][shared]).forEach((x,j)=>{const cx=X(x.summary[axis][shared]);s+=`<circle cx="${cx}" cy="${y}" r="6.5" fill="${tc(x.tone)}" stroke="${css('--surface')}" stroke-width="2"/><text x="${cx}" y="${y+(j%2?21:-11)}" class="lbl2" text-anchor="middle">${x.tone}</text>`})});
+  svg.innerHTML=s;
+  const ok=scenes.every(sc=>{const g=t=>rows.find(x=>x.scene===sc&&x.tone===t).summary[axis][shared];return g(pos)>g(neg)});
+  const mean=t=>{const v=rows.filter(x=>x.tone===t).map(x=>x.summary[axis][shared]);return v.reduce((a,b)=>a+b,0)/v.length};
+  document.getElementById('gstat').innerHTML=['excited','plain','sad'].map(t=>`<div>${t}, average<b>${mean(t).toFixed(1)}</b></div>`).join('')+`<div>${pos} past ${neg} in both scripts<b>${ok?'yes':'no'}</b></div>`;
+}
+let mwin='during';
+function drawMap(){
+  const svg=document.getElementById('msvg'),W=860,H=400,cx=W/2,cy=H/2,sx=W/2-30,sy=H/2-24,pts=(mwin==='during'?D.map_during:D.map_after)[shared];
+  let s=`<line x1="30" x2="${W-30}" y1="${cy}" y2="${cy}" stroke="${css('--rule-strong')}"/><line x1="${cx}" x2="${cx}" y1="16" y2="${H-16}" stroke="${css('--rule-strong')}"/><text x="${W-30}" y="${cy-8}" class="axis" text-anchor="end">pattern 1</text><text x="${cx+8}" y="26" class="axis">pattern 2</text>`;
+  pts.forEach((p,i)=>{s+=`<circle data-i="${i}" cx="${cx+p[0]*sx}" cy="${cy-p[1]*sy}" r="6.5" fill="${tc(D.map_points[i].tone)}" stroke="${css('--surface')}" stroke-width="2"/>`});
+  svg.innerHTML=s;svg.querySelectorAll('circle').forEach(c=>{c.onpointermove=e=>{const m=D.map_points[+c.dataset.i];showTip(e,`<b>${m.tone}</b>, take ${m.take+1}<br>“${m.text}”`)};c.onpointerleave=hideTip});
+}
+const setWin=w=>{mwin=w;document.getElementById('mwin1').setAttribute('aria-pressed',w==='during');document.getElementById('mwin2').setAttribute('aria-pressed',w==='after');drawMap()};
+document.getElementById('mwin1').onclick=()=>setWin('during');document.getElementById('mwin2').onclick=()=>setWin('after');
+
+function drawBars(){
+  const rows=[['clip length only',D.duration_only,1],['input (codec tokens)',D.decode_during[0]],['best layer, after they stop',Math.max(...D.decode_after)],['layer 31, after they stop',D.decode_after[L-1]],['through the word head',D.text_head_decode],['shuffled labels',Math.max(...D.floor),1]];
+  document.getElementById('bars').innerHTML=rows.map(([n,v,dim])=>`<div class="row${dim?' dim':''}"><span>${n}</span><span class="track"><span class="fill" style="width:${v*100}%"></span><span class="chance" style="left:33.3%"></span></span><b>${pct(v)}</b></div>`).join('');
+}
+
+const EM=D.emo;
+const ecol=e=>e==='sad'?css('--sad'):e==='happy'?css('--happy'):css('--ink');
+function drawEmoProbe(){layerChart('emoprobesvg','emoprobe-legend',[['voice it never heard',EM.probe.by_voice,css('--accent')],['sentence it never heard',EM.probe.by_sentence,css('--excited')],['1.2 s after, unseen voice',EM.probe.after_by_voice,css('--plain')],['shuffled labels',EM.probe.floor,css('--ink-3'),true]],0,1,['guessing '+Math.round(EM.chance*100)+'%',EM.chance])}
+function drawConfusion(){
+  const E=EM.emotions,n=E.length,c=30,l=104,t=96,W=l+n*c+8,H=t+n*c+8,tot=EM.confusion.map(r=>r.reduce((a,b)=>a+b,0));let s='';
+  E.forEach((e,j)=>s+=`<text transform="translate(${l+j*c+c/2+4},${t-8}) rotate(-55)" class="lbl2">${e}</text>`);
+  E.forEach((e,i)=>{s+=`<text x="${l-8}" y="${t+i*c+c/2+4}" class="lbl2" text-anchor="end">${e}</text>`;EM.confusion[i].forEach((v,j)=>{const f=v/(tot[i]||1);s+=`<rect data-i="${i}" data-j="${j}" x="${l+j*c}" y="${t+i*c}" width="${c-1}" height="${c-1}" fill="${mix(css('--mid'),i===j?css('--accent'):css('--ink'),f)}"/>`;if(v)s+=`<text x="${l+j*c+c/2}" y="${t+i*c+c/2+4}" class="axis" text-anchor="middle" style="fill:${f>.45?css('--paper'):css('--ink-2')}">${v}</text>`})});
+  const svg=document.getElementById('confsvg');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.innerHTML=s;
+  svg.querySelectorAll('rect').forEach(r=>{r.onpointermove=e=>{const i=+r.dataset.i,j=+r.dataset.j;showTip(e,`<b>${E[i]}</b> heard as <b>${E[j]}</b><br>${EM.confusion[i][j]} of ${tot[i]} clips`)};r.onpointerleave=hideTip});
+}
+function drawEmoMap(){
+  const E=EM.emotions,ax=EM.centroid_xy.map(p=>p[1]),flip=EM.acoustics.correlation_with_axis.pitch_hz<0?-1:1,vals=ax.map(v=>v*flip);
+  const W=860,H=210,l=30,r=30,lo=Math.min(...vals),hi=Math.max(...vals),pad=(hi-lo)*.06,X=v=>l+(W-l-r)*(v-lo+pad)/(hi-lo+2*pad),y=105;
+  let s=`<line x1="${l}" x2="${W-r}" y1="${y}" y2="${y}" stroke="${css('--rule-strong')}"/><text x="${l}" y="${H-6}" class="axis">lower, flatter pitch</text><text x="${W-r}" y="${H-6}" class="axis" text-anchor="end">higher, more animated pitch</text>`;
+  const order=E.map((e,i)=>[e,vals[i]]).sort((a,b)=>a[1]-b[1]);
+  order.forEach(([e,v],k)=>{const x=X(v),up=k%2===0,ly=up?y-18-(k%4===0?22:0):y+28+(k%4===1?22:0);const a=EM.acoustics.by_emotion[e];
+    s+=`<line x1="${x}" x2="${x}" y1="${y}" y2="${ly+(up?4:-12)}" stroke="${css('--rule-strong')}"/><circle data-e="${e}" cx="${x}" cy="${y}" r="6" fill="${ecol(e)}" stroke="${css('--surface')}" stroke-width="2"/><text x="${x}" y="${ly}" class="lbl" text-anchor="middle" style="fill:${ecol(e)}">${e}</text>`});
+  const svg=document.getElementById('emomapsvg');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.innerHTML=s;
+  svg.querySelectorAll('circle').forEach(c=>{c.onpointermove=ev=>{const a=EM.acoustics.by_emotion[c.dataset.e];showTip(ev,`<b>${c.dataset.e}</b><br>average pitch ${Math.round(a.pitch_hz)} Hz<br>pitch movement ${a.pitch_movement.toFixed(1)} semitones<br>${a.words_per_s.toFixed(1)} words/s · ${a.level_db.toFixed(1)} dB`)};c.onpointerleave=hideTip});
+}
+function drawHeat(){
+  const E=EM.emotions,Lc=EM.counts.length,W=860,lab=104,cw=(W-lab)/Lc,row=22,H=E.length*row+26,mx=Math.max(...EM.counts.flat(),1);let s='';
+  E.forEach((e,i)=>{s+=`<text x="${lab-8}" y="${i*row+15}" class="lbl2" text-anchor="end" style="${e==='sad'||e==='happy'?`fill:${ecol(e)}`:''}">${e}</text>`;
+    for(let l=0;l<Lc;l++){const c=EM.counts[l][i];s+=`<rect data-l="${l}" data-i="${i}" x="${lab+l*cw}" y="${i*row}" width="${cw-1}" height="${row-2}" fill="${mix(css('--mid'),e==='sad'?css('--sad'):e==='happy'?css('--happy'):css('--ink'),Math.sqrt(c/mx))}"/>`}});
+  for(let l=0;l<Lc;l+=4)s+=`<text x="${lab+l*cw+cw/2}" y="${E.length*row+16}" class="axis" text-anchor="middle">${l}</text>`;
+  const svg=document.getElementById('heatsvg');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.innerHTML=s;
+  svg.querySelectorAll('rect').forEach(r=>{r.onpointermove=e=>{const l=+r.dataset.l,i=+r.dataset.i;showTip(e,`<b>layer ${l} · ${E[i]}</b><br>${EM.counts[l][i]} strong neurons<br>with shuffled labels: ${EM.null_counts[l][i]}`)};r.onpointerleave=hideTip});
+}
+function profileSvg(p,emotion){
+  const E=EM.emotions,W=420,row=22,l=100,r=36,H=E.length*row+26,m=Math.max(2,...p.profile.map(Math.abs))*1.05,X=v=>l+(W-l-r)*(v+m)/(2*m);let s='';
+  for(const t of [-2,-1,0,1,2])if(Math.abs(t)<=m)s+=`<line x1="${X(t)}" x2="${X(t)}" y1="0" y2="${E.length*row}" stroke="${t===0?css('--ink-3'):css('--rule-strong')}"/><text x="${X(t)}" y="${E.length*row+16}" class="axis" text-anchor="middle">${t}</text>`;
+  E.forEach((e,i)=>{const v=p.profile[i],y=i*row+4,x0=X(0),x1=X(v),hl=e==='sad'||e==='happy';s+=`<text x="${l-8}" y="${y+11}" class="lbl2" text-anchor="end">${e}</text><rect x="${Math.min(x0,x1)}" y="${y}" width="${Math.max(1.5,Math.abs(x1-x0))}" height="13" fill="${hl?ecol(e):css('--flat')}" opacity="${hl?1:.55}"/><text x="${v>=0?x1+5:x1-5}" y="${y+11}" class="axis" text-anchor="${v>=0?'start':'end'}">${v.toFixed(1)}</text>`});
+  return `<div><div class="lbl2" style="font:500 12px var(--sans);color:var(--ink-2);margin-bottom:6px">layer ${p.layer} / neuron ${p.neuron}: ${p.description.toLowerCase()}</div><svg viewBox="0 0 ${W} ${H}">${s}</svg></div>`;
+}
+function drawExamples(){document.getElementById('examples').innerHTML=['sad','happy'].filter(e=>EM.examples[e]).map(e=>profileSvg(EM.examples[e],e)).join('')}
+function drawEmotion(){if(!EM)return;drawEmoProbe();drawConfusion();drawEmoMap();drawHeat();drawExamples()}
+function drawAll(){setLayer(shared);drawDecode();drawTransfer();drawBars();drawEmotion()}
+const renderListen=section('l',D.traces.qwen,sparks),renderGrok=section('g',D.traces.grok,grokStrip);
+linkSlider('uslider','ulayer',drawUnits);linkSlider('lslider','llayer',renderListen);linkSlider('mslider','mlayer',drawMap);linkSlider('gslider','glayer',renderGrok);
+drawAll();
+
+document.getElementById('mode').onclick=()=>{const m=document.documentElement.dataset.mode==='dark'?'light':'dark';document.documentElement.dataset.mode=m;try{localStorage.setItem('mode',m)}catch(e){}drawAll()};
+
+const prose=document.getElementById('prose'),words=prose.innerText.trim().split(/\s+/).length,mins=Math.max(1,Math.round(words/230));
+document.getElementById('words').textContent=words.toLocaleString('en-US');document.getElementById('read').textContent=mins+' min';document.getElementById('readline').textContent=mins+' min read';
+const heads=[...prose.querySelectorAll('h2')];
+const tocItems=heads.map(h=>`<li><a href="#${h.id}" data-h="${h.id}">${h.textContent}</a></li>`).join('');
+document.getElementById('toc').innerHTML=tocItems;document.getElementById('toc-mobile').innerHTML=tocItems;
+const bar=document.querySelector('.progress i');
+function onScroll(){const max=document.documentElement.scrollHeight-innerHeight;bar.style.transform=`scaleX(${max>0?scrollY/max:0})`;let active=heads[0];for(const h of heads)if(h.getBoundingClientRect().top<innerHeight*.3)active=h;document.querySelectorAll('#toc a').forEach(a=>a.classList.toggle('is-active',a.dataset.h===active.id))}
+addEventListener('scroll',onScroll,{passive:true});onScroll();
+</script>
+</body></html>

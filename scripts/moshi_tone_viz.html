@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inside Moshi's Ears</title>
+<style>
+:root{
+  --ink:var(--foreground,#0b0b0b);--ink2:var(--muted-foreground,#52514e);--line:var(--border,#e4e3df);--panel:var(--card,#ffffff);
+  --sad:#2a78d6;--excited:#eb6834;--plain:#1baf7a;--mid:#d9d8d3;--floor:#a3a29b;--accent:#6250d6;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--sad:#3987e5;--excited:#d95926;--plain:#199e70;--mid:#3a3936;--floor:#6b6a64;--accent:#9085e9;--ink:var(--foreground,#f0efec);--ink2:var(--muted-foreground,#c3c2b7);--line:var(--border,#2e2d2a);--panel:var(--card,#1a1a19)}}
+:root[data-theme="dark"]{--sad:#3987e5;--excited:#d95926;--plain:#199e70;--mid:#3a3936;--floor:#6b6a64;--accent:#9085e9}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font:15px/1.55 var(--font-sans,system-ui,sans-serif)}
+main{max-width:900px;margin:0 auto;padding:8px 0 32px;display:flex;flex-direction:column;gap:22px}
+h1{font-size:26px;margin:0 0 4px}h2{font-size:18px;margin:0 0 4px}
+p{margin:6px 0}.dim{color:var(--ink2);font-size:13px}.lede{color:var(--ink2)}
+section{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius,12px);padding:16px}
+.step{font:600 11px var(--font-mono,ui-monospace,monospace);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+button,select{font:inherit;font-size:13px;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+input[type=range]{flex:1;min-width:160px;accent-color:var(--accent)}
+.layerbadge{font:600 13px var(--font-mono,ui-monospace,monospace);min-width:92px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.axis{fill:var(--ink2);font-size:11px}.grid{stroke:var(--line)}.lbl{fill:var(--ink);font-size:12px}.lbl2{fill:var(--ink2);font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--ink2);margin:6px 0}
+.key{display:inline-flex;align-items:center;gap:6px}.sw{width:14px;height:3px;border-radius:2px;display:inline-block}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;box-shadow:0 3px 10px rgba(0,0,0,.15);z-index:9;max-width:280px}
+.two{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:700px){.two{grid-template-columns:1fr}}
+canvas{width:100%;height:auto;image-rendering:pixelated;border-radius:6px;display:block}
+.stat{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px}.stat div{font-size:12px;color:var(--ink2)}.stat b{display:block;font-size:20px;color:var(--ink)}
+.players{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+@media (max-width:560px){.players{grid-template-columns:1fr}}
+.player{border:1px solid var(--line);border-radius:8px;padding:6px 8px;display:flex;align-items:center;gap:8px;font-size:13px}
+.player button{padding:3px 9px}
+.callout{border-left:3px solid var(--accent);padding:4px 0 4px 12px;margin:10px 0 0}
+.spark{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+@media (max-width:560px){.spark{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.spark figure{margin:0;border:1px solid var(--line);border-radius:8px;padding:6px}.spark figcaption{font:11px var(--font-mono,ui-monospace,monospace);color:var(--ink2)}
+.bars .row{display:grid;grid-template-columns:190px 1fr 48px;gap:10px;align-items:center;margin:7px 0;font-size:13px}
+@media (max-width:560px){.bars .row{grid-template-columns:120px 1fr 40px}}
+.bars .track{height:14px;background:var(--mid);border-radius:4px;position:relative}.bars .fill{position:absolute;inset:0 auto 0 0;border-radius:4px;background:var(--accent)}
+.bars .chance{position:absolute;top:-3px;bottom:-3px;border-left:2px dashed var(--ink2)}
+</style></head><body><main>
+
+<header>
+<h1>Inside Moshi's ears</h1>
+<p class="lede">The same sentence, said three ways: excited, sad and plain. Moshi was made to stay silent and just listen, and every layer was recorded 12.5 times a second. This page walks from the machine, to its units, to what happens over time, to what it does with it.</p>
+</header>
+
+<section id="arch">
+<div class="step">1 · The machine</div>
+<h2>Sound goes in on the left. Each column is one layer.</h2>
+<p class="dim">Moshi never sees a waveform. The Mimi codec turns every 80 ms of audio into 8 small integers ("tokens"). Moshi looks each one up as a list of 4096 numbers and adds them up. That 4096-number list is passed through 32 layers; each layer reads it and adds its own edit. The last version goes to two heads: one picks the next word (or "stay silent"), the other picks Moshi's own audio tokens. Column colour = how well tone can be read from that layer after the user stops talking. <b>Click a column.</b></p>
+<svg id="archsvg" viewBox="0 0 860 250" role="img" aria-label="Moshi architecture"></svg>
+<div class="stat" id="archstat"></div>
+</section>
+
+<section id="units">
+<div class="step">2 · The units</div>
+<h2>4096 units at one layer, coloured by how they react to a sad voice versus an excited one</h2>
+<p class="dim">Each square is one of the 4096 numbers at this layer. <span style="color:var(--sad)">Blue</span> = it goes up when the voice is sad. <span style="color:var(--excited)">Orange</span> = it goes up when the voice is excited. Grey = it doesn't care. Strength is the effect size (Cohen's d): the gap between the two tones' averages divided by the normal take-to-take wobble. A d of 1 means the gap is as big as the wobble; 2 or more is a strong, reliable difference. The grid order is arbitrary, so look at how much lights up, not where.</p>
+<div class="controls"><span class="layerbadge" id="ulayer"></span><input type="range" id="uslider" min="0" max="32" step="1"><button id="uplay">▶ Sweep layers</button></div>
+<div class="two">
+<canvas id="grid" width="64" height="64" aria-label="Unit effect grid"></canvas>
+<div>
+<div class="legend"><span class="key"><span class="dot" style="background:var(--excited)"></span>excited-loving</span><span class="key"><span class="dot" style="background:var(--mid)"></span>indifferent</span><span class="key"><span class="dot" style="background:var(--sad)"></span>sad-loving</span></div>
+<div class="stat" id="ustat"></div>
+<p class="callout" id="unote"></p>
+</div></div>
+</section>
+
+<section id="listen">
+<div class="step">3 · Watch it listen</div>
+<h2>One number per moment: is Moshi's state leaning sad or excited?</h2>
+<p class="dim">Squashing 4096 units into one meaningful number: first every unit is rescaled to the same spread (otherwise a few huge units drown out the rest), then we take the single direction in that 4096-D space that points from "excited voice" to "sad voice" (the average sad state minus the average excited state, learned from all 81 clips). At every 80 ms frame we measure how far the current state sits along that line. Above 0 = sad side, below 0 = excited side. The shaded band is when the voice is playing. Press play to hear each version with a moving playhead.</p>
+<div class="controls"><select id="lscene"></select><select id="laxis"></select><span class="layerbadge" id="llayer"></span><input type="range" id="lslider" min="0" max="32" step="1"></div>
+<div class="legend" id="llegend"></div>
+<svg id="lsvg" viewBox="0 0 860 300" role="img" aria-label="Tone projection over time"></svg>
+<div class="players" id="lplayers"></div>
+<p class="callout">While the voice plays, the lines split almost at once and stay apart. After it stops (past the dashed lines) they drift back together on this axis, yet section 4's "after" view and the 84–88% probe show the tone is still there. The memory of how you sounded is kept along different directions from the live "hearing" signal, which is why this one line fades even though the information doesn't.</p>
+<p class="dim" style="margin-top:12px">The six units at this layer that react most strongly, over the same clips:</p>
+<div class="spark" id="lspark"></div>
+</section>
+
+<section id="map">
+<div class="step">4 · The map</div>
+<h2>81 clips, with the words subtracted out</h2>
+<p class="dim">Every dot is one clip (9 sentences × 3 tones × 3 takes). For each sentence we subtracted its average state, which removes what the words contribute, then squashed 4096 dimensions down to the 2 that vary most (PCA). Nobody told the squashing about tone. If the colours still sort themselves into clumps, the voice is what moves Moshi most once the words are gone.</p>
+<div class="controls"><button id="mwin1" aria-pressed="true">While speaking</button><button id="mwin2" aria-pressed="false">1.2 s after they stop</button><span class="layerbadge" id="mlayer"></span><input type="range" id="mslider" min="0" max="32" step="1"></div>
+<div class="legend"><span class="key"><span class="dot" style="background:var(--excited)"></span>excited</span><span class="key"><span class="dot" style="background:var(--sad)"></span>sad</span><span class="key"><span class="dot" style="background:var(--plain)"></span>plain</span></div>
+<svg id="msvg" viewBox="0 0 860 420" role="img" aria-label="Clip map"></svg>
+</section>
+
+<section id="grok">
+<div class="step">5 · A voice it was not trained on</div>
+<h2>The sad and excited directions were learned only from the Qwen "Ryan" voice. Do they still work on Grok's "Eve"?</h2>
+<p class="dim">These are the earlier xAI Grok TTS clips: a different engine, a different (female) voice, longer scripts, emotion requested with tags. Same projection as section 3, same directions, no refitting.</p>
+<div class="controls"><select id="gscene"></select><select id="gaxis"></select><span class="layerbadge" id="glayer"></span><input type="range" id="gslider" min="0" max="32" step="1"></div>
+<div class="legend" id="glegend"></div>
+<svg id="gsvg" viewBox="0 0 860 300" role="img" aria-label="Grok clips projected"></svg>
+<div class="players" id="gplayers"></div>
+<p class="dim" style="margin-top:14px">Every Grok clip, including three deliveries the axis was never shown (flat, hesitant, frustrated), placed by its average position while speaking:</p>
+<svg id="gstrip" viewBox="0 0 860 150" role="img" aria-label="All Grok clips on the axis"></svg>
+<div class="stat" id="gstat"></div>
+<p class="callout">Look at the excited ↔ sad axis around the middle layers. Excited lands at one end. Plain sits in the middle. Sad, flat and hesitant all land on the sad side, and flat and hesitant often go further than sad itself. So this axis is less "sadness" than <b>energy</b>: bright, fast and loud at one end; low, slow and quiet at the other. Psychologists call this arousal. It is the easiest emotional dimension to hear in a voice, and it is what Moshi tracks most clearly. Telling sad from flat or hesitant would need a second direction.</p>
+</section>
+
+<section id="neck">
+<div class="step">6 · The bottleneck</div>
+<h2>Moshi hears it, carries it, then barely uses it</h2>
+<p class="dim">How often a simple probe names the right tone (3 choices, so 33% is guessing), reading from each stage. Sentences are held out, so the probe can't cheat by recognising words.</p>
+<div class="bars" id="bars"></div>
+<p class="callout">The tone is clearly there in layer 31, the last layer before the heads. But read through the word head it mostly disappears, and Moshi's chance of starting to talk is the same for every tone (about 2.5% per frame), with "Yeah" as its top first word for all three. The information reaches the doorway and isn't used to choose what to say. That is the gap a fine-tune has to close: connect a signal that already exists, rather than teach Moshi to hear emotion.</p>
+</section>
+
+</main>
+<div class="tip" id="tip" hidden></div>
+<script>
+const D=__DATA__;
+const L=D.layers.length, css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const TONE_COLOR={excited:'--excited',sad:'--sad',plain:'--plain'};
+const AXES={sad_vs_excited:['excited','sad'],sad_vs_plain:['plain','sad'],excited_vs_plain:['plain','excited']};
+const AXIS_LABEL={sad_vs_excited:'excited ↔ sad axis',sad_vs_plain:'plain ↔ sad axis',excited_vs_plain:'plain ↔ excited axis'};
+const tip=document.getElementById('tip');
+function showTip(e,html){tip.hidden=false;tip.innerHTML=html;const w=tip.offsetWidth;tip.style.left=Math.min(e.clientX+14,innerWidth-w-8)+'px';tip.style.top=(e.clientY+14)+'px'}
+function hideTip(){tip.hidden=true}
+const lname=i=>i===0?'input embed':'layer '+D.layers[i];
+let shared=17;
+const sliders=[];
+function linkSlider(id,badge,render){const s=document.getElementById(id);s.value=shared;sliders.push([s,badge,render]);s.addEventListener('input',()=>setLayer(+s.value));}
+function setLayer(i){shared=i;for(const [s,b,r] of sliders){s.value=i;document.getElementById(b).textContent=lname(i);r()}drawArch()}
+
+function mix(a,b,t){const pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16);const c=[16,8,0].map(s=>Math.round(((pa>>s)&255)*(1-t)+((pb>>s)&255)*t));return`rgb(${c})`}
+
+function drawArch(){
+  const svg=document.getElementById('archsvg'),W=860,x0=250,x1=690,cw=(x1-x0)/L;
+  const lo=Math.min(...D.decode_after)-0.02,hi=Math.max(...D.decode_after);let s='';
+  s+=`<rect x="4" y="95" width="90" height="60" rx="8" fill="none" stroke="${css('--line')}"/><text x="49" y="120" class="lbl" text-anchor="middle">your voice</text><text x="49" y="138" class="lbl2" text-anchor="middle">24 kHz audio</text>`;
+  s+=`<path d="M96 125h22" stroke="${css('--ink2')}" marker-end="url(#ar)"/>`;
+  s+=`<rect x="120" y="85" width="110" height="80" rx="8" fill="none" stroke="${css('--line')}"/><text x="175" y="112" class="lbl" text-anchor="middle">Mimi codec</text><text x="175" y="130" class="lbl2" text-anchor="middle">8 tokens</text><text x="175" y="145" class="lbl2" text-anchor="middle">every 80 ms</text>`;
+  s+=`<path d="M232 125h14" stroke="${css('--ink2')}" marker-end="url(#ar)"/>`;
+  for(let i=0;i<L;i++){const v=D.decode_after[i],t=Math.max(0,Math.min(1,(v-lo)/(hi-lo)));const x=x0+i*cw;const sel=i===shared;
+    s+=`<rect data-i="${i}" x="${x+1}" y="60" width="${cw-2}" height="130" rx="3" fill="${mix(css('--mid').startsWith('#')?css('--mid'):'#d9d8d3',css('--accent'),t)}" stroke="${sel?css('--ink'):'none'}" stroke-width="${sel?2:0}" style="cursor:pointer"/>`}
+  s+=`<text x="${x0}" y="50" class="lbl2">embed</text><text x="${x0+cw*L/2}" y="50" class="lbl2" text-anchor="middle">32 transformer layers · 4096 units each</text><text x="${x1}" y="50" class="lbl2" text-anchor="end">31</text>`;
+  s+=`<text x="${x0}" y="212" class="lbl2">lighter = tone harder to read · darker = easier (after the user stops), ${Math.round(Math.min(...D.decode_after)*100)}–${Math.round(Math.max(...D.decode_after)*100)}%</text>`;
+  s+=`<path d="M${x1+2} 100h22" stroke="${css('--ink2')}" marker-end="url(#ar)"/><path d="M${x1+2} 150h22" stroke="${css('--ink2')}" marker-end="url(#ar)"/>`;
+  s+=`<rect x="${x1+26}" y="78" width="138" height="44" rx="8" fill="none" stroke="${css('--line')}"/><text x="${x1+95}" y="97" class="lbl" text-anchor="middle">word head</text><text x="${x1+95}" y="113" class="lbl2" text-anchor="middle">next word or silence</text>`;
+  s+=`<rect x="${x1+26}" y="128" width="138" height="44" rx="8" fill="none" stroke="${css('--line')}"/><text x="${x1+95}" y="147" class="lbl" text-anchor="middle">depth transformer</text><text x="${x1+95}" y="163" class="lbl2" text-anchor="middle">Moshi's own voice</text>`;
+  s+=`<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="${css('--ink2')}"/></marker></defs>`;
+  svg.innerHTML=s;
+  svg.querySelectorAll('rect[data-i]').forEach(r=>{r.addEventListener('click',()=>setLayer(+r.dataset.i));
+    r.addEventListener('pointermove',e=>{const i=+r.dataset.i;showTip(e,`<b>${lname(i)}</b><br>tone readable while speaking: ${Math.round(D.decode_during[i]*100)}%<br>after they stop: ${Math.round(D.decode_after[i]*100)}%`)});r.addEventListener('pointerleave',hideTip)});
+  document.getElementById('archstat').innerHTML=`<div>Selected<b>${lname(shared)}</b></div><div>Tone readable while speaking<b>${Math.round(D.decode_during[shared]*100)}%</b></div><div>After they stop<b>${Math.round(D.decode_after[shared]*100)}%</b></div><div>Guessing<b>33%</b></div>`;
+}
+
+const grid=document.getElementById('grid'),gctx=grid.getContext('2d');
+function divColor(d){const t=Math.min(1,Math.abs(d)/3);const m=css('--mid').startsWith('#')?css('--mid'):'#d9d8d3';return mix(m,css(d>0?'--sad':'--excited'),t)}
+function drawUnits(){
+  const e=D.effects[shared];const img=gctx.createImageData(64,64);
+  for(let u=0;u<4096;u++){const c=divColor(e[u]/20).match(/\d+/g).map(Number);img.data.set([c[0],c[1],c[2],255],u*4)}
+  gctx.putImageData(img,0,0);
+  let a1=0,a2=0,sad=0;for(const v of e){const d=Math.abs(v/20);if(d>1)a1++;if(d>2){a2++;if(v>0)sad++}}
+  document.getElementById('ustat').innerHTML=`<div>Units with d &gt; 1<b>${a1}</b></div><div>Units with d &gt; 2<b>${a2}</b></div><div>of those, sad-loving<b>${a2?Math.round(sad/a2*100):0}%</b></div>`;
+  const top=D.top_units[shared].map(u=>`#${u} (d ${(e[u]/20).toFixed(1)})`).join(', ');
+  document.getElementById('unote').innerHTML=`Strongest at ${lname(shared)}: ${top}. Slide through the layers: the pattern never collapses to a handful of "emotion neurons". Hundreds of units each shift a little, together. That's a <i>direction</i> in the 4096-D space rather than a single switch, which is why section 3 measures a direction.`;
+}
+grid.addEventListener('pointermove',ev=>{const r=grid.getBoundingClientRect();const x=Math.floor((ev.clientX-r.left)/r.width*64),y=Math.floor((ev.clientY-r.top)/r.height*64);const u=y*64+x;if(u<0||u>4095)return;const d=D.effects[shared][u]/20;showTip(ev,`unit #${u}<br>d = ${d.toFixed(2)} (${Math.abs(d)<0.5?'indifferent':d>0?'higher when sad':'higher when excited'})`)});
+grid.addEventListener('pointerleave',hideTip);
+let sweep=null;document.getElementById('uplay').onclick=()=>{if(sweep){clearInterval(sweep);sweep=null;document.getElementById('uplay').textContent='▶ Sweep layers';return}
+  let i=0;document.getElementById('uplay').textContent='■ Stop';sweep=setInterval(()=>{setLayer(i);i++;if(i>=L){clearInterval(sweep);sweep=null;document.getElementById('uplay').textContent='▶ Sweep layers'}},280)};
+
+function lineChart(svgId,traces,axis,playheads){
+  const svg=document.getElementById(svgId),W=860,H=300,l=48,r=12,t=14,b=30,pw=W-l-r,ph=H-t-b;
+  const fs=traces[0].frame_s,maxF=Math.max(...traces.map(tr=>tr.projection[axis][shared].length));
+  const vals=traces.flatMap(tr=>tr.projection[axis][shared]);let lo=Math.min(...vals),hi=Math.max(...vals);const pad=(hi-lo)*0.08||1;lo-=pad;hi+=pad;
+  const X=f=>l+pw*f/(maxF-1),Y=v=>t+ph*(1-(v-lo)/(hi-lo));
+  let s='';
+  const step=Math.pow(10,Math.floor(Math.log10((hi-lo)/4)));const nice=[1,2,5,10].map(m=>m*step).find(m=>(hi-lo)/m<=6);
+  for(let v=Math.ceil(lo/nice)*nice;v<=hi;v+=nice){s+=`<line x1="${l}" x2="${W-r}" y1="${Y(v)}" y2="${Y(v)}" class="grid" stroke-width="${Math.abs(v)<1e-9?1.5:1}"/><text x="${l-6}" y="${Y(v)+4}" class="axis" text-anchor="end">${+v.toFixed(2)}</text>`}
+  for(let sec=0;sec*1/fs<maxF;sec+=1){const f=sec/fs;s+=`<text x="${X(f)}" y="${H-10}" class="axis" text-anchor="middle">${sec}s</text>`}
+  const [neg,pos]=AXES[axis];
+  s+=`<text x="${l+6}" y="${t+12}" class="lbl2">↑ ${pos} side</text><text x="${l+6}" y="${t+ph-6}" class="lbl2">↓ ${neg} side</text>`;
+  traces.forEach(tr=>{const [a,z]=tr.speech;s+=`<rect x="${X(a)}" y="${t}" width="${X(z)-X(a)}" height="${ph}" fill="${css(TONE_COLOR[tr.tone])}" opacity="0.06"/><line x1="${X(z)}" x2="${X(z)}" y1="${t}" y2="${t+ph}" stroke="${css(TONE_COLOR[tr.tone])}" stroke-dasharray="3 4" opacity="0.7"/>`});
+  traces.forEach(tr=>{const p=tr.projection[axis][shared].map((v,f)=>`${X(f).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');s+=`<polyline points="${p}" fill="none" stroke="${css(TONE_COLOR[tr.tone])}" stroke-width="2" stroke-linejoin="round"/>`});
+  traces.forEach((tr,k)=>{const f=playheads[k];if(f!=null)s+=`<line x1="${X(f)}" x2="${X(f)}" y1="${t}" y2="${t+ph}" stroke="${css(TONE_COLOR[tr.tone])}" stroke-width="2"/><circle cx="${X(f)}" cy="${Y(tr.projection[axis][shared][Math.min(f,tr.projection[axis][shared].length-1)])}" r="5" fill="${css(TONE_COLOR[tr.tone])}" stroke="${css('--panel')||'#fff'}" stroke-width="2"/>`});
+  s+=`<rect x="${l}" y="${t}" width="${pw}" height="${ph}" fill="transparent" class="hit"/><line class="cross" x1="-9" x2="-9" y1="${t}" y2="${t+ph}" stroke="${css('--ink2')}"/>`;
+  svg.innerHTML=s;
+  const hit=svg.querySelector('.hit'),cross=svg.querySelector('.cross');
+  hit.addEventListener('pointermove',e=>{const rc=svg.getBoundingClientRect();const sx=(e.clientX-rc.left)*W/rc.width;const f=Math.max(0,Math.min(maxF-1,Math.round((sx-l)/pw*(maxF-1))));cross.setAttribute('x1',X(f));cross.setAttribute('x2',X(f));
+    showTip(e,`<b>${(f*fs).toFixed(2)} s</b><br>`+traces.map(tr=>{const v=tr.projection[axis][shared][f];const sp=f>=tr.speech[0]&&f<tr.speech[1]?'speaking':f>=tr.speech[1]?'finished':'not yet';return `${tr.tone}: ${v==null?'–':v.toFixed(2)} <span style="opacity:.7">(${sp})</span>`}).join('<br>'))});
+  hit.addEventListener('pointerleave',()=>{hideTip();cross.setAttribute('x1',-9);cross.setAttribute('x2',-9)});
+}
+
+function makeSection(prefix,pool){
+  const scenes=[...new Set(pool.map(t=>t.scene))];
+  const sceneSel=document.getElementById(prefix+'scene'),axisSel=document.getElementById(prefix+'axis');
+  sceneSel.innerHTML=scenes.map(s=>`<option value="${s}">${s}: “${pool.find(t=>t.scene===s).text.slice(0,48)}${pool.find(t=>t.scene===s).text.length>48?'…':''}”</option>`).join('');
+  axisSel.innerHTML=Object.keys(AXES).map(a=>`<option value="${a}">${AXIS_LABEL[a]}</option>`).join('');
+  const heads=[null,null,null];let audios=[];
+  const current=()=>pool.filter(t=>t.scene===sceneSel.value);
+  function render(){const tr=current();lineChart(prefix+'svg',tr,axisSel.value,heads);
+    document.getElementById(prefix+'legend').innerHTML=tr.map(x=>`<span class="key"><span class="sw" style="background:${css(TONE_COLOR[x.tone])}"></span>${x.tone}</span>`).join('')+`<span class="key">dashed line = that version stops speaking</span>`;
+    if(prefix==='l')renderSpark(tr);if(prefix==='g')renderGrokStat(tr)}
+  function players(){audios.forEach(a=>a.pause());const tr=current();const box=document.getElementById(prefix+'players');box.innerHTML='';audios=[];
+    tr.forEach((x,k)=>{const a=new Audio(x.audio);audios.push(a);const div=document.createElement('div');div.className='player';
+      div.innerHTML=`<button>▶</button><span class="dot" style="background:${css(TONE_COLOR[x.tone])}"></span><span>${x.tone}</span><span class="dim">${(x.speech[1]-x.speech[0])*x.frame_s|0}.${Math.round(((x.speech[1]-x.speech[0])*x.frame_s%1)*10)} s</span>`;
+      const btn=div.querySelector('button');btn.onclick=()=>{if(a.paused){audios.forEach((o,j)=>{if(j!==k){o.pause();o.currentTime=0}});a.currentTime=0;a.play()}else a.pause()};
+      a.onplay=()=>{btn.textContent='■';const tick=()=>{if(a.paused)return;heads[k]=Math.round((x.lead_s+a.currentTime)/x.frame_s);render();requestAnimationFrame(tick)};tick()};
+      a.onpause=a.onended=()=>{btn.textContent='▶';heads[k]=null;render()};box.appendChild(div)})}
+  sceneSel.onchange=()=>{heads.fill(null);players();render()};axisSel.onchange=render;
+  players();return render;
+}
+
+function renderSpark(tr){
+  const box=document.getElementById('lspark');const units=D.top_units[shared];
+  box.innerHTML=units.map(u=>{const series=tr.map(x=>x.units[String(shared)][String(u)]);const all=series.flat();const lo=Math.min(...all),hi=Math.max(...all);const W=200,H=60;
+    const maxF=Math.max(...series.map(s=>s.length));
+    const lines=series.map((s,k)=>`<polyline fill="none" stroke-width="1.6" stroke="${css(TONE_COLOR[tr[k].tone])}" points="${s.map((v,f)=>`${(W*f/(maxF-1)).toFixed(1)},${(H-4-(H-8)*(v-lo)/((hi-lo)||1)).toFixed(1)}`).join(' ')}"/>`).join('');
+    const d=D.effects[shared][u]/20;
+    return `<figure><figcaption>unit #${u} · d ${d>0?'+':''}${d.toFixed(1)} (${d>0?'sad':'excited'}-loving)</figcaption><svg viewBox="0 0 ${W} ${H}">${lines}</svg></figure>`}).join('');
+}
+
+const EXTRA={flat:'#8a8984',hesitant:'#6250d6',frustrated:'#e34948'};
+const toneColor=t=>TONE_COLOR[t]?css(TONE_COLOR[t]):EXTRA[t];
+function renderGrokStat(tr){
+  const axis=document.getElementById('gaxis').value,[neg,pos]=AXES[axis];
+  const rows=D.traces.grok_summary,svg=document.getElementById('gstrip'),W=860,l=110,r=20;
+  const vals=rows.map(x=>x.summary[axis][shared]);let lo=Math.min(...vals,0),hi=Math.max(...vals,0);const pad=(hi-lo)*0.08||1;lo-=pad;hi+=pad;
+  const X=v=>l+(W-l-r)*(v-lo)/(hi-lo);const scenes=[...new Set(rows.map(x=>x.scene))];
+  let s=`<line x1="${X(0)}" x2="${X(0)}" y1="10" y2="120" class="grid"/><text x="${l}" y="142" class="axis">← ${neg} side</text><text x="${W-r}" y="142" class="axis" text-anchor="end">${pos} side →</text>`;
+  scenes.forEach((sc,k)=>{const y=35+k*50;s+=`<text x="0" y="${y+4}" class="lbl2">${sc}</text><line x1="${l}" x2="${W-r}" y1="${y}" y2="${y}" class="grid"/>`;
+    rows.filter(x=>x.scene===sc).sort((a,b)=>a.summary[axis][shared]-b.summary[axis][shared]).forEach((x,j)=>{const cx=X(x.summary[axis][shared]);
+      s+=`<circle cx="${cx}" cy="${y}" r="7" fill="${toneColor(x.tone)}" stroke="${css('--panel')||'#fff'}" stroke-width="2"><title>${x.tone}: ${x.summary[axis][shared].toFixed(2)}</title></circle><text x="${cx}" y="${y+(j%2?22:-12)}" class="lbl2" text-anchor="middle">${x.tone}</text>`})});
+  svg.innerHTML=s;
+  const mean=t=>{const v=rows.filter(x=>x.tone===t).map(x=>x.summary[axis][shared]);return v.reduce((a,b)=>a+b,0)/v.length};
+  const okBoth=scenes.every(sc=>{const g=t=>rows.find(x=>x.scene===sc&&x.tone===t).summary[axis][shared];return g(pos)>g(neg)});
+  document.getElementById('gstat').innerHTML=['excited','plain','sad'].map(t=>`<div>${t}, average<b style="color:${toneColor(t)}">${mean(t).toFixed(1)}</b></div>`).join('')+`<div>${pos} beyond ${neg} in both scripts?<b>${okBoth?'yes':'no'}</b></div>`;
+}
+
+let mwin='during';
+function drawMap(){
+  const svg=document.getElementById('msvg'),W=860,H=420,cx=W/2,cy=H/2,sx=W/2-30,sy=H/2-24;
+  const pts=(mwin==='during'?D.map_during:D.map_after)[shared];let s=`<line x1="30" x2="${W-30}" y1="${cy}" y2="${cy}" class="grid"/><line x1="${cx}" x2="${cx}" y1="20" y2="${H-20}" class="grid"/><text x="${W-30}" y="${cy-6}" class="axis" text-anchor="end">pattern 1</text><text x="${cx+6}" y="30" class="axis">pattern 2</text>`;
+  pts.forEach((p,i)=>{const m=D.map_points[i];s+=`<circle data-i="${i}" cx="${cx+p[0]*sx}" cy="${cy-p[1]*sy}" r="6" fill="${css(TONE_COLOR[m.tone])}" stroke="${css('--panel')||'#fff'}" stroke-width="2" opacity="0.9"/>`});
+  svg.innerHTML=s;
+  svg.querySelectorAll('circle').forEach(c=>{c.addEventListener('pointermove',e=>{const m=D.map_points[+c.dataset.i];showTip(e,`<b>${m.tone}</b> · take ${m.take+1}<br>“${m.text}”`)});c.addEventListener('pointerleave',hideTip)});
+}
+document.getElementById('mwin1').onclick=()=>{mwin='during';document.getElementById('mwin1').setAttribute('aria-pressed','true');document.getElementById('mwin2').setAttribute('aria-pressed','false');drawMap()};
+document.getElementById('mwin2').onclick=()=>{mwin='after';document.getElementById('mwin2').setAttribute('aria-pressed','true');document.getElementById('mwin1').setAttribute('aria-pressed','false');drawMap()};
+
+function drawBars(){
+  const rows=[['Clip length only',D.duration_only],['Input embed (codec tokens)',D.decode_during[0]],['Best layer, after they stop',Math.max(...D.decode_after)],['Layer 31, after they stop',D.decode_after[L-1]],['Through the word head',D.text_head_decode],['Shuffled labels (95th pct)',Math.max(...D.floor)]];
+  document.getElementById('bars').innerHTML=rows.map(([n,v])=>`<div class="row"><span>${n}</span><span class="track"><span class="fill" style="width:${v*100}%"></span><span class="chance" style="left:33.3%"></span></span><b>${Math.round(v*100)}%</b></div>`).join('')+`<p class="dim">Dashed mark = guessing (33%).</p>`;
+}
+
+const renderListen=makeSection('l',D.traces.qwen),renderGrok=makeSection('g',D.traces.grok);
+linkSlider('uslider','ulayer',drawUnits);linkSlider('lslider','llayer',renderListen);linkSlider('mslider','mlayer',drawMap);linkSlider('gslider','glayer',renderGrok);
+setLayer(shared);drawBars();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>setLayer(shared));
+</script></body></html>
